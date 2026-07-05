@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+build/
+Build/
+BuildLogs/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xcresult
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# Archives and exported products
+*.ipa
+*.xcarchive
+*.app
+*.dSYM.zip
+*.dSYM
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
