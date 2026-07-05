@@ -191,11 +191,7 @@ struct RecordReceiptRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: record.type.iconName)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(record.type.tint)
-                .frame(width: 42, height: 42)
-                .background(AppTheme.softBackground(for: record.type), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            RecordThumbnailView(record: record, size: 42)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {

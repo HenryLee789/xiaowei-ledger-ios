@@ -8,6 +8,7 @@ struct LedgerRecord: Identifiable, Codable, Hashable {
     var note: String
     var date: Date
     var createdAt: Date
+    var imageFilename: String?
 
     init(
         id: UUID = UUID(),
@@ -16,7 +17,8 @@ struct LedgerRecord: Identifiable, Codable, Hashable {
         category: String,
         note: String,
         date: Date,
-        createdAt: Date? = nil
+        createdAt: Date? = nil,
+        imageFilename: String? = nil
     ) {
         self.id = id
         self.amount = amount
@@ -25,6 +27,7 @@ struct LedgerRecord: Identifiable, Codable, Hashable {
         self.note = note
         self.date = date
         self.createdAt = createdAt ?? date
+        self.imageFilename = imageFilename
     }
 }
 

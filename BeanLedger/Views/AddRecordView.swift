@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct AddRecordView: View {
     @ObservedObject var viewModel: LedgerViewModel
@@ -10,6 +11,9 @@ struct AddRecordView: View {
     @State private var selectedType: LedgerType = .expense
     @State private var selectedCategory = LedgerType.expense.categories[0]
     @State private var validationMessage: String?
+    @State private var selectedRecordImage: UIImage?
+    @State private var selectedRecordImageData: Data?
+    @State private var isShowingImagePicker = false
 
     init(viewModel: LedgerViewModel, draft: AddRecordDraft = AddRecordDraft()) {
         self.viewModel = viewModel
@@ -31,6 +35,7 @@ struct AddRecordView: View {
                     amountCard
                     typeSelector
                     categorySelector
+                    recordImageCard
                     detailCard
                 }
                 .padding(.horizontal, 18)
@@ -193,6 +198,66 @@ struct AddRecordView: View {
         }
     }
 
+    private var recordImageCard: some View {
+        CuteCardView(padding: 16, cornerRadius: 24) {
+            HStack(spacing: 14) {
+                RecordImagePreview(
+                    image: selectedRecordImage,
+                    type: selectedType,
+                    category: selectedCategory,
+                    size: 58
+                )
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("记录图片")
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(AppTheme.text)
+                    Text(selectedRecordImage == nil ? "不上传也会自动生成可爱小图" : "已选择用户上传图片")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 8)
+
+                VStack(spacing: 8) {
+                    Button {
+                        isShowingImagePicker = true
+                    } label: {
+                        Label(selectedRecordImage == nil ? "上传" : "更换", systemImage: "photo.fill")
+                            .font(.system(size: 12, weight: .heavy))
+                            .foregroundStyle(AppTheme.cherry)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(Color.white.opacity(0.84), in: Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(AppTheme.border, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(CutePressButtonStyle())
+                    .accessibilityIdentifier("addRecord.photoPickerButton")
+
+                    if selectedRecordImage != nil {
+                        Button("不用图片") {
+                            selectedRecordImage = nil
+                            selectedRecordImageData = nil
+                        }
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingImagePicker) {
+            PhotoLibraryPicker { data, image in
+                selectedRecordImageData = data
+                selectedRecordImage = image
+                validationMessage = nil
+            }
+        }
+    }
+
     private var actionButtons: some View {
         HStack(spacing: 12) {
             CuteButton(title: "先不记啦", systemImage: "xmark.circle.fill", style: .secondary) {
@@ -247,7 +312,8 @@ struct AddRecordView: View {
                 type: selectedType,
                 category: selectedCategory,
                 note: note,
-                date: date
+                date: date,
+                imageData: selectedRecordImageData
             )
             viewModel.showToast("已记好啦")
             dismiss()
@@ -271,6 +337,7 @@ struct AddRecordView: View {
 
         return result
     }
+
 }
 
 private struct AddTypeButton: View {

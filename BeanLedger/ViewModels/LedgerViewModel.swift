@@ -208,18 +208,39 @@ final class LedgerViewModel: ObservableObject {
     }
 
     @discardableResult
-    func addRecord(amount: Double, type: LedgerType, category: String, note: String, date: Date) throws -> LedgerRecord {
+    func addRecord(
+        amount: Double,
+        type: LedgerType,
+        category: String,
+        note: String,
+        date: Date,
+        imageData: Data? = nil
+    ) throws -> LedgerRecord {
         guard amount > 0 else {
             throw LedgerInputError.invalidAmount
         }
 
+        let recordID = UUID()
+        let imageFilename: String?
+        do {
+            if let imageData {
+                imageFilename = try RecordImageStore.saveImage(data: imageData, for: recordID)
+            } else {
+                imageFilename = nil
+            }
+        } catch {
+            throw LedgerInputError.persistenceFailed(error.localizedDescription)
+        }
+
         let record = LedgerRecord(
+            id: recordID,
             amount: amount,
             type: type,
             category: category,
             note: note.trimmingCharacters(in: .whitespacesAndNewlines),
             date: date,
-            createdAt: Date()
+            createdAt: Date(),
+            imageFilename: imageFilename
         )
         do {
             try store.add(record)
@@ -227,22 +248,31 @@ final class LedgerViewModel: ObservableObject {
             checkDueRecurringTemplates()
             return record
         } catch {
+            RecordImageStore.deleteImage(filename: imageFilename)
             throw LedgerInputError.persistenceFailed(error.localizedDescription)
         }
     }
 
     @discardableResult
-    func addRecord(amountText: String, type: LedgerType, category: String, note: String, date: Date) throws -> LedgerRecord {
+    func addRecord(
+        amountText: String,
+        type: LedgerType,
+        category: String,
+        note: String,
+        date: Date,
+        imageData: Data? = nil
+    ) throws -> LedgerRecord {
         let normalized = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let amount = Double(normalized), amount > 0 else {
             throw LedgerInputError.invalidAmount
         }
-        return try addRecord(amount: amount, type: type, category: category, note: note, date: date)
+        return try addRecord(amount: amount, type: type, category: category, note: note, date: date, imageData: imageData)
     }
 
     func delete(_ record: LedgerRecord) throws {
         do {
             try store.delete(recordID: record.id)
+            RecordImageStore.deleteImage(filename: record.imageFilename)
             syncFromStore()
             checkDueRecurringTemplates()
         } catch {
@@ -253,6 +283,7 @@ final class LedgerViewModel: ObservableObject {
     func clearAllRecords() throws {
         do {
             try store.clear()
+            RecordImageStore.clearAllImages()
             syncFromStore()
             checkDueRecurringTemplates()
         } catch {

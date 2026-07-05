@@ -47,6 +47,9 @@
 		A20000000000000000000115 /* DayRecordListSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000215 /* DayRecordListSheet.swift */; };
 		A20000000000000000000116 /* FilterPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000216 /* FilterPanelView.swift */; };
 		A20000000000000000000117 /* TrendChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000217 /* TrendChartView.swift */; };
+		A30000000000000000000101 /* RecordImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000201 /* RecordImageStore.swift */; };
+		A30000000000000000000102 /* RecordThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000202 /* RecordThumbnailView.swift */; };
+		A30000000000000000000103 /* PhotoLibraryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000203 /* PhotoLibraryPicker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +96,9 @@
 		A20000000000000000000215 /* DayRecordListSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayRecordListSheet.swift; sourceTree = "<group>"; };
 		A20000000000000000000216 /* FilterPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterPanelView.swift; sourceTree = "<group>"; };
 		A20000000000000000000217 /* TrendChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendChartView.swift; sourceTree = "<group>"; };
+		A30000000000000000000201 /* RecordImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordImageStore.swift; sourceTree = "<group>"; };
+		A30000000000000000000202 /* RecordThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordThumbnailView.swift; sourceTree = "<group>"; };
+		A30000000000000000000203 /* PhotoLibraryPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryPicker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +158,7 @@
 				A20000000000000000000207 /* BudgetStore.swift */,
 				A20000000000000000000208 /* RecurringStore.swift */,
 				A20000000000000000000209 /* ExportService.swift */,
+				A30000000000000000000201 /* RecordImageStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -207,6 +214,8 @@
 				A10000000000000000000217 /* ToastView.swift */,
 				A10000000000000000000218 /* CuteMascotView.swift */,
 				A10000000000000000000224 /* KittyMascotView.swift */,
+				A30000000000000000000202 /* RecordThumbnailView.swift */,
+				A30000000000000000000203 /* PhotoLibraryPicker.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -302,6 +311,7 @@
 				A20000000000000000000107 /* BudgetStore.swift in Sources */,
 				A20000000000000000000108 /* RecurringStore.swift in Sources */,
 				A20000000000000000000109 /* ExportService.swift in Sources */,
+				A30000000000000000000101 /* RecordImageStore.swift in Sources */,
 				A10000000000000000000105 /* LedgerViewModel.swift in Sources */,
 				A10000000000000000000106 /* AppRootView.swift in Sources */,
 				A10000000000000000000107 /* HomeView.swift in Sources */,
@@ -325,6 +335,8 @@
 				A10000000000000000000117 /* ToastView.swift in Sources */,
 				A10000000000000000000118 /* CuteMascotView.swift in Sources */,
 				A10000000000000000000123 /* KittyMascotView.swift in Sources */,
+				A30000000000000000000102 /* RecordThumbnailView.swift in Sources */,
+				A30000000000000000000103 /* PhotoLibraryPicker.swift in Sources */,
 				A10000000000000000000119 /* AppTheme.swift in Sources */,
 				A10000000000000000000120 /* DateHelpers.swift in Sources */,
 				A10000000000000000000121 /* CurrencyFormatter.swift in Sources */,
