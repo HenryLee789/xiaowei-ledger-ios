@@ -143,6 +143,16 @@ open BeanLedger.xcodeproj
 xcodebuild build -project BeanLedger.xcodeproj -scheme BeanLedger -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
+## 版本发布与安装包
+
+源码继续维护在 `main` 分支。每次功能迭代完成后，会先更新源码和文档并推送到 `main`，再创建版本 tag，例如 `v1.0.0`、`v1.1.0`、`v1.2.0`。
+
+每个正式版本的安装包放在 GitHub Releases，不直接提交进源码仓库。`CHANGELOG.md` 记录每个版本的更新内容，GitHub Release Notes 会同步写明本次更新内容和安装说明。
+
+如果只是开发调试，可以用 Xcode 直接打开 `BeanLedger.xcodeproj` 并运行到 Simulator。
+
+如果要安装到手机，可以下载对应 GitHub Release 附件里的 ipa。当前发布流程生成的是未签名 ipa，不能直接安装到 iPhone，需要使用你自己的自签工具重新签名后再安装。
+
 ## 打包 ipa
 
 本项目可生成未签名 ipa，目录结构为标准 ipa：
