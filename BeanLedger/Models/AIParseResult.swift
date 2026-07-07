@@ -70,6 +70,40 @@ struct AIParseResult: Codable, Equatable {
     }
 }
 
+enum AIParsePayload {
+    static func decodeResults(from data: Data) throws -> [AIParseResult] {
+        let decoder = JSONDecoder()
+
+        if let envelope = try? decoder.decode(AIParseRecordsEnvelope.self, from: data),
+           let records = envelope.decodedRecords {
+            return records
+        }
+
+        if let records = try? decoder.decode([AIParseResult].self, from: data) {
+            return records
+        }
+
+        return [try decoder.decode(AIParseResult.self, from: data)]
+    }
+}
+
+private struct AIParseRecordsEnvelope: Decodable {
+    var records: [AIParseResult]?
+    var items: [AIParseResult]?
+    var transactions: [AIParseResult]?
+    var entries: [AIParseResult]?
+    var results: [AIParseResult]?
+
+    var decodedRecords: [AIParseResult]? {
+        for candidate in [records, items, transactions, entries, results] {
+            if let candidate {
+                return candidate
+            }
+        }
+        return nil
+    }
+}
+
 struct AIParsedLedgerDraft: Equatable {
     var amount: Double
     var type: LedgerType
@@ -96,6 +130,16 @@ enum AIParseValidationError: LocalizedError, Equatable {
 }
 
 enum AIParseResultValidator {
+    static func validatedDrafts(
+        from results: [AIParseResult],
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) throws -> [AIParsedLedgerDraft] {
+        try results.map {
+            try validatedDraft(from: $0, now: now, calendar: calendar)
+        }
+    }
+
     static func validatedDraft(
         from result: AIParseResult,
         now: Date = Date(),
@@ -158,8 +202,33 @@ enum AIResponseJSONExtractor {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        guard let start = cleaned.firstIndex(of: "{"),
-              let end = cleaned.lastIndex(of: "}"),
+        let objectStart = cleaned.firstIndex(of: "{")
+        let arrayStart = cleaned.firstIndex(of: "[")
+        let start: String.Index?
+        let closingCharacter: Character
+
+        switch (objectStart, arrayStart) {
+        case let (object?, array?):
+            if object < array {
+                start = object
+                closingCharacter = "}"
+            } else {
+                start = array
+                closingCharacter = "]"
+            }
+        case let (object?, nil):
+            start = object
+            closingCharacter = "}"
+        case let (nil, array?):
+            start = array
+            closingCharacter = "]"
+        case (nil, nil):
+            start = nil
+            closingCharacter = "}"
+        }
+
+        guard let start,
+              let end = cleaned.lastIndex(of: closingCharacter),
               start <= end else {
             throw ExtractionError.missingJSONObject
         }

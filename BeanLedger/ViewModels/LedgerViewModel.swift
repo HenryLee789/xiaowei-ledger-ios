@@ -280,6 +280,15 @@ final class LedgerViewModel: ObservableObject {
         )
     }
 
+    @discardableResult
+    func addRecords(from aiDrafts: [AIParsedLedgerDraft]) throws -> [LedgerRecord] {
+        var createdRecords: [LedgerRecord] = []
+        for draft in aiDrafts {
+            createdRecords.append(try addRecord(from: draft))
+        }
+        return createdRecords
+    }
+
     func delete(_ record: LedgerRecord) throws {
         do {
             try store.delete(recordID: record.id)

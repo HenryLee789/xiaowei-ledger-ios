@@ -7,6 +7,7 @@ struct AIEntryView: View {
     @StateObject private var aiViewModel = AIEntryViewModel()
 
     private let examples = [
+        "发工资6926，豫小七外卖29.47",
         "今天午饭花了28",
         "工资到账8500",
         "存了500到攒豆豆",
@@ -31,11 +32,11 @@ struct AIEntryView: View {
                         messageCard(errorMessage)
                     }
 
-                    if let draft = aiViewModel.parsedDraft {
+                    if !aiViewModel.parsedDrafts.isEmpty {
                         AIParseConfirmationView(
-                            draft: draft,
-                            onSave: { save(draft) },
-                            onEdit: { edit(draft) },
+                            drafts: aiViewModel.parsedDrafts,
+                            onSave: { save(aiViewModel.parsedDrafts) },
+                            onEdit: { edit($0) },
                             onCancel: { aiViewModel.cancelResult() }
                         )
                     }
@@ -176,10 +177,11 @@ struct AIEntryView: View {
         }
     }
 
-    private func save(_ draft: AIParsedLedgerDraft) {
+    private func save(_ drafts: [AIParsedLedgerDraft]) {
         do {
-            try ledgerViewModel.addRecord(from: draft)
-            ledgerViewModel.showToast("已记好啦")
+            try ledgerViewModel.addRecords(from: drafts)
+            let message = drafts.count == 1 ? "已记好啦" : "已记好 \(drafts.count) 笔啦"
+            ledgerViewModel.showToast(message)
             aiViewModel.clearAfterSave()
         } catch {
             aiViewModel.errorMessage = error.localizedDescription

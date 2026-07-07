@@ -9,10 +9,15 @@ struct Stage2LedgerLogicTests {
         try testViewModelAddsRecordsAndCalculatesTotals()
         try testDisplayAmountSigns()
         try testAIResponseJSONExtractorHandlesMarkdown()
+        try testAIParsePayloadDecodesMultipleRecords()
+        try testAIParsePayloadKeepsLongRecordLists()
         try testAIParseResultValidationFallsBackAndTruncates()
         try testAIParseResultValidationRequiresAmountAndType()
+        try testAIParseResultValidationBuildsMultipleDrafts()
         try testNaturalLanguageDateParserHandlesRelativeAndSpecificDates()
         try testViewModelAddsConfirmedAIRecord()
+        try testViewModelAddsConfirmedAIRecords()
+        try testViewModelAddsManyConfirmedAIRecords()
         print("Stage2LedgerLogicTests passed")
     }
 
@@ -147,6 +152,74 @@ struct Stage2LedgerLogicTests {
         assertEqual(result.needsConfirmation, true, "extractor should preserve confirmation flag")
     }
 
+    private static func testAIParsePayloadDecodesMultipleRecords() throws {
+        let content = """
+        {
+          "records": [
+            {
+              "amount": 6926,
+              "type": "income",
+              "category": "工资",
+              "note": "今天发工资",
+              "dateText": "今天",
+              "confidence": 0.95,
+              "needsConfirmation": true,
+              "questions": []
+            },
+            {
+              "amount": 29.47,
+              "type": "expense",
+              "category": "餐饮",
+              "note": "豫小七外卖",
+              "dateText": "今天中午",
+              "confidence": 0.9,
+              "needsConfirmation": true,
+              "questions": []
+            }
+          ],
+          "needsConfirmation": true,
+          "questions": []
+        }
+        """
+
+        let data = try AIResponseJSONExtractor.extractJSONData(from: content)
+        let results = try AIParsePayload.decodeResults(from: data)
+
+        assertEqual(results.count, 2, "multi-record AI payload should decode both ledger records")
+        assertEqual(results[0].amount, 6926, "first decoded record should keep salary amount")
+        assertEqual(results[0].type, .income, "first decoded record should be income")
+        assertEqual(results[0].category, "工资", "first decoded record should map to salary")
+        assertEqual(results[1].amount, 29.47, "second decoded record should keep takeaway amount")
+        assertEqual(results[1].type, .expense, "second decoded record should be expense")
+        assertEqual(results[1].category, "餐饮", "second decoded record should map takeaway to food")
+    }
+
+    private static func testAIParsePayloadKeepsLongRecordLists() throws {
+        let rows = (1...25)
+            .map { index in
+                """
+                {
+                  "amount": \(index),
+                  "type": "expense",
+                  "category": "餐饮",
+                  "note": "第\(index)笔",
+                  "dateText": "今天",
+                  "confidence": 0.88,
+                  "needsConfirmation": true,
+                  "questions": []
+                }
+                """
+            }
+            .joined(separator: ",")
+        let data = Data("{\"records\":[\(rows)],\"needsConfirmation\":true,\"questions\":[]}".utf8)
+
+        let results = try AIParsePayload.decodeResults(from: data)
+
+        assertEqual(results.count, 25, "AI payload should not cap long record lists at two records")
+        assertEqual(results.first?.amount, 1, "long payload should keep the first record")
+        assertEqual(results.last?.amount, 25, "long payload should keep the final record")
+    }
+
     private static func testAIParseResultValidationFallsBackAndTruncates() throws {
         let longNote = String(repeating: "很", count: 80)
         let result = AIParseResult(
@@ -209,6 +282,44 @@ struct Stage2LedgerLogicTests {
         )
     }
 
+    private static func testAIParseResultValidationBuildsMultipleDrafts() throws {
+        let results = [
+            AIParseResult(
+                amount: 6926,
+                type: .income,
+                category: "工资",
+                note: "今天发工资",
+                dateText: "今天",
+                confidence: 0.95,
+                needsConfirmation: true,
+                questions: []
+            ),
+            AIParseResult(
+                amount: 29.47,
+                type: .expense,
+                category: "餐饮",
+                note: "豫小七外卖",
+                dateText: "今天中午",
+                confidence: 0.9,
+                needsConfirmation: true,
+                questions: []
+            )
+        ]
+
+        let drafts = try AIParseResultValidator.validatedDrafts(
+            from: results,
+            now: fixedDate(day: 7, hour: 12),
+            calendar: calendar
+        )
+
+        assertEqual(drafts.count, 2, "validator should build one draft for each AI record")
+        assertEqual(drafts[0].type, .income, "first draft should be income")
+        assertEqual(drafts[0].category, "工资", "first draft should keep salary category")
+        assertEqual(drafts[1].type, .expense, "second draft should be expense")
+        assertEqual(drafts[1].category, "餐饮", "second draft should keep food category")
+        assertEqual(drafts[1].amount, 29.47, "second draft should keep decimal takeaway amount")
+    }
+
     private static func testNaturalLanguageDateParserHandlesRelativeAndSpecificDates() throws {
         let now = fixedDate(day: 7, hour: 10)
 
@@ -250,6 +361,70 @@ struct Stage2LedgerLogicTests {
         assertEqual(viewModel.records[0].type, .expense, "confirmed AI draft should save type")
         assertEqual(viewModel.records[0].category, "餐饮", "confirmed AI draft should save category")
         assertEqual(viewModel.records[0].note, "兰州拉面", "confirmed AI draft should save note")
+    }
+
+    @MainActor
+    private static func testViewModelAddsConfirmedAIRecords() throws {
+        let fileURL = temporaryLedgerURL()
+        try? FileManager.default.removeItem(at: fileURL)
+        let store = LedgerStore(fileURL: fileURL)
+        let viewModel = LedgerViewModel(store: store, calendar: calendar)
+        let drafts = [
+            AIParsedLedgerDraft(
+                amount: 6926,
+                type: .income,
+                category: "工资",
+                note: "今天发工资",
+                date: fixedDate(day: 7, hour: 9),
+                dateText: "今天",
+                confidence: 0.95,
+                questions: []
+            ),
+            AIParsedLedgerDraft(
+                amount: 29.47,
+                type: .expense,
+                category: "餐饮",
+                note: "豫小七外卖",
+                date: fixedDate(day: 7, hour: 12),
+                dateText: "今天中午",
+                confidence: 0.9,
+                questions: []
+            )
+        ]
+
+        try viewModel.addRecords(from: drafts)
+
+        assertEqual(viewModel.records.count, 2, "confirmed AI drafts should save every ledger record")
+        assertEqual(viewModel.monthIncomeTotal, 6926, "salary draft should update income totals")
+        assertEqual(viewModel.monthExpenseTotal, 29.47, "takeaway draft should update expense totals")
+        assertEqual(viewModel.records.map(\.type).contains(.income), true, "saved AI records should include income")
+        assertEqual(viewModel.records.map(\.type).contains(.expense), true, "saved AI records should include expense")
+    }
+
+    @MainActor
+    private static func testViewModelAddsManyConfirmedAIRecords() throws {
+        let fileURL = temporaryLedgerURL()
+        try? FileManager.default.removeItem(at: fileURL)
+        let store = LedgerStore(fileURL: fileURL)
+        let viewModel = LedgerViewModel(store: store, calendar: calendar)
+        let drafts = (1...25).map { index in
+            AIParsedLedgerDraft(
+                amount: Double(index),
+                type: .expense,
+                category: "餐饮",
+                note: "第\(index)笔",
+                date: fixedDate(day: 7, hour: 12),
+                dateText: "今天",
+                confidence: 0.88,
+                questions: []
+            )
+        }
+
+        let records = try viewModel.addRecords(from: drafts)
+
+        assertEqual(records.count, 25, "batch AI save should return every created record")
+        assertEqual(viewModel.records.count, 25, "batch AI save should persist more than twenty records")
+        assertEqual(viewModel.monthExpenseTotal, 325, "batch AI save should update totals for every record")
     }
 
     private static let calendar: Calendar = {

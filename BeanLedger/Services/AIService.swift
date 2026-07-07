@@ -45,7 +45,7 @@ struct AIService {
         self.session = session
     }
 
-    func parseLedgerText(_ input: String, settings: AISettings, apiKey: String) async throws -> AIParseResult {
+    func parseLedgerText(_ input: String, settings: AISettings, apiKey: String) async throws -> [AIParseResult] {
         let trimmedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedInput.isEmpty else {
             throw ServiceError.emptyInput
@@ -53,7 +53,7 @@ struct AIService {
 
         #if DEBUG
         if settings.enableMockParsing {
-            return Self.mockParseResult(for: trimmedInput)
+            return Self.mockParseResults(for: trimmedInput)
         }
         #endif
 
@@ -63,7 +63,7 @@ struct AIService {
         }
         do {
             let data = try AIResponseJSONExtractor.extractJSONData(from: content)
-            return try JSONDecoder().decode(AIParseResult.self, from: data)
+            return try AIParsePayload.decodeResults(from: data)
         } catch is AIResponseJSONExtractor.ExtractionError {
             throw ServiceError.invalidJSON
         } catch {
@@ -201,18 +201,50 @@ private extension AIService {
 
     JSON schema:
     {
-      "amount": 28.0,
-      "type": "expense",
-      "category": "餐饮",
-      "note": "兰州拉面",
-      "dateText": "今天中午",
-      "confidence": 0.92,
+      "records": [
+        {
+          "amount": 28.0,
+          "type": "expense",
+          "category": "餐饮",
+          "note": "兰州拉面",
+          "dateText": "今天中午",
+          "confidence": 0.92,
+          "needsConfirmation": true,
+          "questions": []
+        }
+      ],
       "needsConfirmation": true,
       "questions": []
     }
 
-    type 只能是 expense、income、saving、debt。amount 必须是正数；无法识别时设为 null。category 只能映射到现有类目：出账：餐饮、交通、购物、生活缴费、娱乐、医疗、房租、其他出账；入账：工资、副业、红包、报销、投资收益、其他入账；攒豆豆：存钱、目标储蓄、备用金、理财转入、其他攒豆豆；借贷：借出、借入、还款、收回借款、信用卡、花呗 / 白条、其他借贷。needsConfirmation 固定 true。
+    如果用户一句话里包含多笔互相独立的账，例如“发了工资，又买了外卖”，必须在 records 里按发生顺序返回多条记录；不要合并金额，不要丢弃其中任何一笔，也不要限制 records 数量。type 只能是 expense、income、saving、debt。amount 必须是正数；无法识别时设为 null。category 只能映射到现有类目：出账：餐饮、交通、购物、生活缴费、娱乐、医疗、房租、其他出账；入账：工资、副业、红包、报销、投资收益、其他入账；攒豆豆：存钱、目标储蓄、备用金、理财转入、其他攒豆豆；借贷：借出、借入、还款、收回借款、信用卡、花呗 / 白条、其他借贷。每条记录和顶层 needsConfirmation 都固定 true。
     """
+
+    static func mockParseResults(for input: String) -> [AIParseResult] {
+        let clauses = mockClauses(for: input)
+        if clauses.count > 1 {
+            return clauses.map { mockParseResult(for: $0) }
+        }
+
+        let contexts = amountContexts(in: input)
+        if contexts.count > 1 {
+            return contexts.map { context in
+                let mapping = mockTypeAndCategory(for: context.text)
+                return AIParseResult(
+                    amount: context.amount,
+                    type: mapping.type,
+                    category: mapping.category,
+                    note: mockNote(for: context.text, type: mapping.type, category: mapping.category),
+                    dateText: mockDateText(for: context.text),
+                    confidence: 0.86,
+                    needsConfirmation: true,
+                    questions: []
+                )
+            }
+        }
+
+        return [mockParseResult(for: input)]
+    }
 
     static func mockParseResult(for input: String) -> AIParseResult {
         let amount = firstAmount(in: input)
@@ -228,6 +260,48 @@ private extension AIService {
             needsConfirmation: true,
             questions: amount == nil ? ["请补充金额"] : []
         )
+    }
+
+    static func mockClauses(for input: String) -> [String] {
+        var normalized = input
+            .replacingOccurrences(of: "，", with: "\n")
+            .replacingOccurrences(of: ",", with: "\n")
+            .replacingOccurrences(of: "；", with: "\n")
+            .replacingOccurrences(of: ";", with: "\n")
+            .replacingOccurrences(of: "。", with: "\n")
+            .replacingOccurrences(of: "\n又", with: "\n")
+            .replacingOccurrences(of: "\n然后", with: "\n")
+            .replacingOccurrences(of: "\n还", with: "\n")
+
+        if amountContexts(in: normalized).count > 1 {
+            normalized = normalized
+                .replacingOccurrences(of: "又", with: "\n")
+                .replacingOccurrences(of: "然后", with: "\n")
+        }
+
+        return normalized
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && firstAmount(in: $0) != nil }
+    }
+
+    static func amountContexts(in input: String) -> [(amount: Double, text: String)] {
+        let pattern = #"(\d+(?:\.\d+)?)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return []
+        }
+
+        let matches = regex.matches(in: input, range: NSRange(input.startIndex..., in: input))
+        return matches.compactMap { match in
+            guard let amountRange = Range(match.range(at: 1), in: input),
+                  let amount = Double(input[amountRange]) else {
+                return nil
+            }
+
+            let lowerBound = input.index(amountRange.lowerBound, offsetBy: -12, limitedBy: input.startIndex) ?? input.startIndex
+            let upperBound = input.index(amountRange.upperBound, offsetBy: 12, limitedBy: input.endIndex) ?? input.endIndex
+            return (amount, String(input[lowerBound..<upperBound]))
+        }
     }
 
     static func firstAmount(in input: String) -> Double? {
@@ -259,7 +333,7 @@ private extension AIService {
         if input.contains("药") || input.contains("医院") {
             return (.expense, "医疗")
         }
-        if input.contains("饭") || input.contains("餐") || input.contains("面") || input.contains("咖啡") || input.contains("奶茶") {
+        if input.contains("饭") || input.contains("餐") || input.contains("面") || input.contains("咖啡") || input.contains("奶茶") || input.contains("外卖") {
             return (.expense, "餐饮")
         }
         return (.expense, "其他出账")
@@ -271,6 +345,12 @@ private extension AIService {
         }
         if category == "餐饮", input.contains("兰州拉面") {
             return "兰州拉面"
+        }
+        if category == "餐饮", input.contains("豫小七") {
+            return "豫小七外卖"
+        }
+        if type == .income, input.contains("发") && input.contains("工资") {
+            return "今天发工资"
         }
         if type == .income {
             return "工资到账"
