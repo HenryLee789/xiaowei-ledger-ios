@@ -43,10 +43,6 @@ struct StatsView: View {
                     .foregroundStyle(AppTheme.secondaryText)
             }
             Spacer()
-            BowView(size: 38)
-                .padding(12)
-                .background(Color.white.opacity(0.85), in: Circle())
-                .cuteShadow()
         }
     }
 

@@ -65,7 +65,6 @@ struct AddRecordView: View {
                         .foregroundStyle(AppTheme.secondaryText)
                 }
                 Spacer()
-                BowView(size: 28)
             }
         }
     }

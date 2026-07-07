@@ -50,6 +50,16 @@
 		A30000000000000000000101 /* RecordImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000201 /* RecordImageStore.swift */; };
 		A30000000000000000000102 /* RecordThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000202 /* RecordThumbnailView.swift */; };
 		A30000000000000000000103 /* PhotoLibraryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000203 /* PhotoLibraryPicker.swift */; };
+		A40000000000000000000101 /* AIModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000201 /* AIModel.swift */; };
+		A40000000000000000000102 /* AISettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000202 /* AISettings.swift */; };
+		A40000000000000000000103 /* AIParseResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000203 /* AIParseResult.swift */; };
+		A40000000000000000000104 /* AISettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000204 /* AISettingsStore.swift */; };
+		A40000000000000000000105 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000205 /* AIService.swift */; };
+		A40000000000000000000106 /* NaturalLanguageDateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000206 /* NaturalLanguageDateParser.swift */; };
+		A40000000000000000000107 /* AIEntryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000207 /* AIEntryViewModel.swift */; };
+		A40000000000000000000108 /* AIEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000208 /* AIEntryView.swift */; };
+		A40000000000000000000109 /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000209 /* AISettingsView.swift */; };
+		A40000000000000000000110 /* AIParseConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000210 /* AIParseConfirmationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +109,16 @@
 		A30000000000000000000201 /* RecordImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordImageStore.swift; sourceTree = "<group>"; };
 		A30000000000000000000202 /* RecordThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordThumbnailView.swift; sourceTree = "<group>"; };
 		A30000000000000000000203 /* PhotoLibraryPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryPicker.swift; sourceTree = "<group>"; };
+		A40000000000000000000201 /* AIModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModel.swift; sourceTree = "<group>"; };
+		A40000000000000000000202 /* AISettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettings.swift; sourceTree = "<group>"; };
+		A40000000000000000000203 /* AIParseResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIParseResult.swift; sourceTree = "<group>"; };
+		A40000000000000000000204 /* AISettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsStore.swift; sourceTree = "<group>"; };
+		A40000000000000000000205 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		A40000000000000000000206 /* NaturalLanguageDateParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaturalLanguageDateParser.swift; sourceTree = "<group>"; };
+		A40000000000000000000207 /* AIEntryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEntryViewModel.swift; sourceTree = "<group>"; };
+		A40000000000000000000208 /* AIEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEntryView.swift; sourceTree = "<group>"; };
+		A40000000000000000000209 /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
+		A40000000000000000000210 /* AIParseConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIParseConfirmationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +162,9 @@
 				A10000000000000000000202 /* LedgerType.swift */,
 				A10000000000000000000203 /* LedgerRecord.swift */,
 				A20000000000000000000206 /* AddRecordDraft.swift */,
+				A40000000000000000000201 /* AIModel.swift */,
+				A40000000000000000000202 /* AISettings.swift */,
+				A40000000000000000000203 /* AIParseResult.swift */,
 				A20000000000000000000201 /* Budget.swift */,
 				A20000000000000000000202 /* RecurringFrequency.swift */,
 				A20000000000000000000203 /* RecurringRecordTemplate.swift */,
@@ -159,6 +182,9 @@
 				A20000000000000000000208 /* RecurringStore.swift */,
 				A20000000000000000000209 /* ExportService.swift */,
 				A30000000000000000000201 /* RecordImageStore.swift */,
+				A40000000000000000000204 /* AISettingsStore.swift */,
+				A40000000000000000000205 /* AIService.swift */,
+				A40000000000000000000206 /* NaturalLanguageDateParser.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -167,6 +193,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000205 /* LedgerViewModel.swift */,
+				A40000000000000000000207 /* AIEntryViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -180,6 +207,9 @@
 				A10000000000000000000209 /* RecordsView.swift */,
 				A10000000000000000000210 /* StatsView.swift */,
 				A10000000000000000000211 /* SettingsView.swift */,
+				A40000000000000000000208 /* AIEntryView.swift */,
+				A40000000000000000000209 /* AISettingsView.swift */,
+				A40000000000000000000210 /* AIParseConfirmationView.swift */,
 				A20000000000000000000210 /* QuickEntryView.swift */,
 				A20000000000000000000211 /* BudgetView.swift */,
 				A20000000000000000000212 /* RecurringRecordsView.swift */,
@@ -302,6 +332,9 @@
 				A10000000000000000000102 /* LedgerType.swift in Sources */,
 				A10000000000000000000103 /* LedgerRecord.swift in Sources */,
 				A20000000000000000000106 /* AddRecordDraft.swift in Sources */,
+				A40000000000000000000101 /* AIModel.swift in Sources */,
+				A40000000000000000000102 /* AISettings.swift in Sources */,
+				A40000000000000000000103 /* AIParseResult.swift in Sources */,
 				A20000000000000000000101 /* Budget.swift in Sources */,
 				A20000000000000000000102 /* RecurringFrequency.swift in Sources */,
 				A20000000000000000000103 /* RecurringRecordTemplate.swift in Sources */,
@@ -312,13 +345,20 @@
 				A20000000000000000000108 /* RecurringStore.swift in Sources */,
 				A20000000000000000000109 /* ExportService.swift in Sources */,
 				A30000000000000000000101 /* RecordImageStore.swift in Sources */,
+				A40000000000000000000104 /* AISettingsStore.swift in Sources */,
+				A40000000000000000000105 /* AIService.swift in Sources */,
+				A40000000000000000000106 /* NaturalLanguageDateParser.swift in Sources */,
 				A10000000000000000000105 /* LedgerViewModel.swift in Sources */,
+				A40000000000000000000107 /* AIEntryViewModel.swift in Sources */,
 				A10000000000000000000106 /* AppRootView.swift in Sources */,
 				A10000000000000000000107 /* HomeView.swift in Sources */,
 				A10000000000000000000108 /* AddRecordView.swift in Sources */,
 				A10000000000000000000109 /* RecordsView.swift in Sources */,
 				A10000000000000000000110 /* StatsView.swift in Sources */,
 				A10000000000000000000111 /* SettingsView.swift in Sources */,
+				A40000000000000000000108 /* AIEntryView.swift in Sources */,
+				A40000000000000000000109 /* AISettingsView.swift in Sources */,
+				A40000000000000000000110 /* AIParseConfirmationView.swift in Sources */,
 				A20000000000000000000110 /* QuickEntryView.swift in Sources */,
 				A20000000000000000000111 /* BudgetView.swift in Sources */,
 				A20000000000000000000112 /* RecurringRecordsView.swift in Sources */,

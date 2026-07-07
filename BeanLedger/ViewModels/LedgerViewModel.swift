@@ -269,6 +269,17 @@ final class LedgerViewModel: ObservableObject {
         return try addRecord(amount: amount, type: type, category: category, note: note, date: date, imageData: imageData)
     }
 
+    @discardableResult
+    func addRecord(from aiDraft: AIParsedLedgerDraft) throws -> LedgerRecord {
+        try addRecord(
+            amount: aiDraft.amount,
+            type: aiDraft.type,
+            category: aiDraft.category,
+            note: aiDraft.note,
+            date: aiDraft.date
+        )
+    }
+
     func delete(_ record: LedgerRecord) throws {
         do {
             try store.delete(recordID: record.id)

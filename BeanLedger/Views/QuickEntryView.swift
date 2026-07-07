@@ -3,12 +3,12 @@ import SwiftUI
 struct QuickEntryView: View {
     @ObservedObject var viewModel: LedgerViewModel
 
-    @State private var selectedAmount: Double? = 20
+    @State private var selectedAmount: Double? = 50
     @State private var customAmount = ""
-    @State private var selectedCategory = "餐饮"
+    @State private var selectedCategory = "燃气费"
 
-    private let amounts: [Double] = [10, 20, 30, 50, 100]
-    private let categories = ["餐饮", "交通", "购物", "工资", "存钱"]
+    private let amounts: [Double] = [50, 100, 150, 200, 300, 400, 500, 2700]
+    private let categories = ["燃气费", "电费", "房租"]
 
     var body: some View {
         CuteCardView {

@@ -17,6 +17,7 @@ struct HomeView: View {
                 VStack(spacing: AppTheme.spacingLarge) {
                     header
                     QuickEntryView(viewModel: viewModel)
+                    aiEntryCard
                     summaryGrid
                     recentSection
                 }
@@ -79,6 +80,40 @@ struct HomeView: View {
         .padding(.vertical, 13)
         .padding(.horizontal, 13)
         .background(AppTheme.savingSoftBackground.opacity(0.9), in: Capsule())
+    }
+
+    private var aiEntryCard: some View {
+        NavigationLink {
+            AIEntryView(ledgerViewModel: viewModel)
+        } label: {
+            CuteCardView {
+                HStack(spacing: 14) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 46, height: 46)
+                        .background(AppTheme.buttonGradient, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("AI 记一笔")
+                            .font(.system(size: 20, weight: .heavy))
+                            .foregroundStyle(AppTheme.text)
+                        Text("一句话告诉小魏，整理后再确认保存")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(AppTheme.secondaryText)
+                            .multilineTextAlignment(.leading)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(AppTheme.cherry)
+                }
+            }
+        }
+        .buttonStyle(CutePressButtonStyle())
+        .accessibilityIdentifier("home.aiEntryButton")
     }
 
     private var summaryGrid: some View {

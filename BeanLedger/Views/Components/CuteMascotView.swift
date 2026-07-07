@@ -56,9 +56,6 @@ struct CuteMascotView: View {
                 .offset(y: size * 0.06)
 
             WhiskerSet(size: size)
-
-            BowView(size: size * 0.30)
-                .offset(x: size * 0.24, y: -size * 0.35)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
@@ -83,30 +80,6 @@ private struct WhiskerSet: View {
     }
 }
 
-struct BowView: View {
-    var size: CGFloat = 28
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-                .fill(AppTheme.cherry)
-                .frame(width: size * 0.56, height: size * 0.42)
-                .rotationEffect(.degrees(-22))
-                .offset(x: -size * 0.24)
-            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-                .fill(AppTheme.cherry)
-                .frame(width: size * 0.56, height: size * 0.42)
-                .rotationEffect(.degrees(22))
-                .offset(x: size * 0.24)
-            Circle()
-                .fill(Color.white.opacity(0.92))
-                .frame(width: size * 0.25, height: size * 0.25)
-        }
-        .frame(width: size, height: size * 0.65)
-        .accessibilityHidden(true)
-    }
-}
-
 private struct Triangle: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
@@ -117,4 +90,3 @@ private struct Triangle: Shape {
         return path
     }
 }
-

@@ -13,6 +13,7 @@ struct SettingsView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppTheme.spacingLarge) {
                     appCard
+                    AISettingsView()
                     styleCard
                     mascotAssetCard
                     actionCard
@@ -61,7 +62,7 @@ struct SettingsView: View {
                     .font(.system(size: 19, weight: .heavy))
                     .foregroundStyle(AppTheme.text)
 
-                Text("原创粉色可爱风：粉白配色、大圆角卡片、胶囊按钮、蝴蝶结、猫耳轮廓、豆豆罐和轻柔小票卡片。")
+                Text("原创粉色可爱风：粉白配色、大圆角卡片、胶囊按钮、猫耳轮廓、豆豆罐和轻柔小票卡片。")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(AppTheme.secondaryText)
                     .lineSpacing(4)
@@ -114,7 +115,7 @@ struct SettingsView: View {
                 Label("版权说明", systemImage: "checkmark.seal.fill")
                     .font(.system(size: 18, weight: .heavy))
                     .foregroundStyle(AppTheme.text)
-                Text("默认项目不包含 Hello Kitty 官方素材。若自行添加 Hello Kitty 图片，仅建议个人自用；公开分发、上传 GitHub、商业使用或上架 App Store 前，请自行确认授权。")
+                Text("本地角色素材仅建议个人自用；公开分发、上传 GitHub、商业使用或上架 App Store 前，请自行确认授权。")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(AppTheme.secondaryText)
                     .lineSpacing(4)
@@ -131,9 +132,9 @@ struct SettingsView: View {
 
     private var mascotAssetDescription: String {
         if UIImage(named: "hello_kitty_mascot") != nil {
-            return "Assets 已预留 hello_kitty_mascot、hello_kitty_bow、hello_kitty_icon。当前检测到本地 hello_kitty_mascot，会优先显示这份本地素材；公开分发前请自行确认授权。"
+            return "当前检测到本地 hello_kitty_mascot，会优先显示这份本地角色素材。"
         }
-        return "Assets 已预留 hello_kitty_mascot、hello_kitty_bow、hello_kitty_icon。当前未检测到本地角色图片，会自动显示 SwiftUI 原创小猫占位；你本地添加图片后，角色组件会优先显示本地素材。"
+        return "当前未检测到本地角色图片，会自动显示 SwiftUI 原创小猫占位。"
     }
 
     private func presentShareSheet(format: ExportFormat) {
