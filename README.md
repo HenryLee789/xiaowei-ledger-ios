@@ -202,7 +202,7 @@ xcodebuild build -project BeanLedger.xcodeproj -scheme BeanLedger -configuration
 
 ## 版本发布与安装包
 
-源码继续维护在 `main` 分支。每次功能迭代完成后，会先更新源码和文档并推送到 `main`，再创建版本 tag，例如 `v1.0.0`、`v1.1.0`、`v1.2.0`、`v1.3.0`。
+源码继续维护在 `main` 分支。每次功能迭代完成后，会先更新源码和文档并推送到 `main`，再创建版本 tag，例如 `v1.0.0`、`v1.1.0`、`v1.2.0`、`v1.3.0`、`v1.3.1`。
 
 每个正式版本的安装包放在 GitHub Releases，不直接提交进源码仓库。每次上传或发版前都必须更新 `CHANGELOG.md`，记录本次版本更新内容；GitHub Release Notes 会同步写明本次更新内容和安装说明。
 
