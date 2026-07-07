@@ -2,8 +2,12 @@ import SwiftUI
 import UIKit
 
 struct AISettingsView: View {
-    @StateObject private var settingsStore = AISettingsStore()
+    @ObservedObject private var settingsStore: AISettingsStore
     @State private var apiKeyDraft = ""
+
+    init(settingsStore: AISettingsStore) {
+        self.settingsStore = settingsStore
+    }
 
     var body: some View {
         CuteCardView {
@@ -28,6 +32,11 @@ struct AISettingsView: View {
         }
         .onAppear {
             apiKeyDraft = settingsStore.apiKey
+        }
+        .onChange(of: settingsStore.settings.fallbackBaseURL) { newValue in
+            if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                settingsStore.settings.useFallbackWhenPrimaryFails = false
+            }
         }
     }
 
@@ -55,23 +64,19 @@ struct AISettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             labeledTextField(
                 title: "API Base URL",
-                placeholder: AISettings.defaultAPIBaseURL,
+                placeholder: AISettings.apiBaseURLPlaceholder,
                 text: $settingsStore.settings.apiBaseURL,
                 keyboard: .URL
             )
 
-            HStack(spacing: 10) {
-                smallActionButton(title: "使用主地址", systemImage: "1.circle.fill") {
-                    settingsStore.usePrimaryBaseURL()
-                }
-                smallActionButton(title: "使用备用", systemImage: "2.circle.fill") {
-                    settingsStore.useFallbackBaseURL()
-                }
-            }
+            Text("App 不内置 API 服务地址，请填写你自己的 OpenAI 兼容接口。")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(AppTheme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
 
             labeledTextField(
                 title: "备用 Base URL",
-                placeholder: AISettings.defaultFallbackBaseURL,
+                placeholder: AISettings.fallbackBaseURLPlaceholder,
                 text: $settingsStore.settings.fallbackBaseURL,
                 keyboard: .URL
             )
@@ -137,12 +142,22 @@ struct AISettingsView: View {
     }
 
     private var fallbackToggle: some View {
-        Toggle(isOn: $settingsStore.settings.useFallbackWhenPrimaryFails) {
-            Text("主地址失败后自动使用备用地址")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(AppTheme.text)
+        let hasFallbackURL = !settingsStore.settings.fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return Toggle(isOn: $settingsStore.settings.useFallbackWhenPrimaryFails) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("主地址失败后自动使用备用地址")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(AppTheme.text)
+                if !hasFallbackURL {
+                    Text("填写备用 Base URL 后可开启")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+            }
         }
         .tint(AppTheme.cherry)
+        .disabled(!hasFallbackURL)
+        .opacity(hasFallbackURL ? 1 : 0.58)
         .padding(12)
         .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityIdentifier("aiSettings.fallbackToggle")
@@ -224,7 +239,7 @@ struct AISettingsView_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
             DottedBackground().ignoresSafeArea()
-            AISettingsView()
+            AISettingsView(settingsStore: AISettingsStore())
                 .padding()
         }
     }

@@ -3,6 +3,7 @@ import Foundation
 struct AIService {
     enum ServiceError: LocalizedError {
         case missingAPIKey
+        case missingAPIBaseURL
         case missingModel
         case emptyInput
         case invalidBaseURL
@@ -16,21 +17,20 @@ struct AIService {
             switch self {
             case .missingAPIKey:
                 return "请先在设置里填写 API Key"
+            case .missingAPIBaseURL:
+                return "请先在 AI 设置里填写 API Base URL"
             case .missingModel:
                 return "请先选择或填写模型"
             case .emptyInput:
                 return "先说说这笔账吧"
             case .invalidBaseURL:
-                return "API 地址不正确"
+                return "API 地址不正确，请使用 HTTPS 地址"
             case .requestFailed(let message):
                 return "网络请求失败：\(message)"
             case .fallbackFailed(let primary, let fallback):
                 return "主地址失败：\(primary)；备用地址失败：\(fallback)"
-            case .httpStatus(let statusCode, let body):
-                if body.isEmpty {
-                    return "API 返回错误：\(statusCode)"
-                }
-                return "API 返回错误：\(statusCode)，\(body)"
+            case .httpStatus(let statusCode, _):
+                return "API 返回错误：\(statusCode)，请检查 API Key、模型或服务状态"
             case .missingContent:
                 return "模型没有返回解析结果"
             case .invalidJSON:
@@ -77,6 +77,7 @@ struct AIService {
             let url = try endpointURL(baseURL: baseURL, pathComponents: ["models"])
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
+            request.timeoutInterval = 30
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
             let response: ModelsResponse = try await decodedResponse(for: request)
             return response.data
@@ -86,6 +87,9 @@ struct AIService {
     }
 
     private func validateCredentials(settings: AISettings, apiKey: String, needsModel: Bool) throws {
+        guard settings.hasConfiguredBaseURL else {
+            throw ServiceError.missingAPIBaseURL
+        }
         guard !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ServiceError.missingAPIKey
         }
@@ -103,12 +107,14 @@ struct AIService {
             return try await operation(primaryBaseURL)
         } catch {
             let primaryError = error
+            let fallbackBaseURL = settings.fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
             guard settings.useFallbackWhenPrimaryFails,
-                  normalizedBaseURL(settings.fallbackBaseURL) != normalizedBaseURL(primaryBaseURL) else {
+                  !fallbackBaseURL.isEmpty,
+                  normalizedBaseURL(fallbackBaseURL) != normalizedBaseURL(primaryBaseURL) else {
                 throw error
             }
             do {
-                return try await operation(settings.fallbackBaseURL)
+                return try await operation(fallbackBaseURL)
             } catch {
                 let fallbackError = error
                 let primaryMessage = (primaryError as? LocalizedError)?.errorDescription ?? primaryError.localizedDescription
@@ -127,6 +133,7 @@ struct AIService {
         let url = try endpointURL(baseURL: baseURL, pathComponents: ["chat", "completions"])
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 30
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(
@@ -175,7 +182,7 @@ struct AIService {
 
     private func endpointURL(baseURL: String, pathComponents: [String]) throws -> URL {
         guard var url = URL(string: normalizedBaseURL(baseURL)),
-              url.scheme?.hasPrefix("http") == true,
+              url.scheme?.lowercased() == "https",
               url.host != nil else {
             throw ServiceError.invalidBaseURL
         }

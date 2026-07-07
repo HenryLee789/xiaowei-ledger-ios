@@ -1,8 +1,10 @@
 import Foundation
 
 struct AISettings: Codable, Equatable {
-    static let defaultAPIBaseURL = "https://cc.zaizai.pet:8888/v1"
-    static let defaultFallbackBaseURL = "https://cc.zaizai.uno:8888/v1"
+    static let defaultAPIBaseURL = ""
+    static let defaultFallbackBaseURL = ""
+    static let apiBaseURLPlaceholder = "例如 https://api.openai.com/v1"
+    static let fallbackBaseURLPlaceholder = "可选，例如 https://api.openai.com/v1"
 
     var apiBaseURL: String
     var fallbackBaseURL: String
@@ -14,7 +16,7 @@ struct AISettings: Codable, Equatable {
         apiBaseURL: String = AISettings.defaultAPIBaseURL,
         fallbackBaseURL: String = AISettings.defaultFallbackBaseURL,
         selectedModel: String = "",
-        useFallbackWhenPrimaryFails: Bool = true,
+        useFallbackWhenPrimaryFails: Bool = false,
         enableMockParsing: Bool = false
     ) {
         self.apiBaseURL = apiBaseURL
@@ -22,5 +24,9 @@ struct AISettings: Codable, Equatable {
         self.selectedModel = selectedModel
         self.useFallbackWhenPrimaryFails = useFallbackWhenPrimaryFails
         self.enableMockParsing = enableMockParsing
+    }
+
+    var hasConfiguredBaseURL: Bool {
+        !apiBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }

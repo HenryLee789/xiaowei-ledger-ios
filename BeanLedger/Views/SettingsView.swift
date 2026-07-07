@@ -3,7 +3,10 @@ import UIKit
 
 struct SettingsView: View {
     @ObservedObject var viewModel: LedgerViewModel
+    @StateObject private var aiSettingsStore = AISettingsStore()
     @State private var isShowingClearConfirmation = false
+    @State private var clearConfirmationText = ""
+    @FocusState private var isClearConfirmationFocused: Bool
 
     var body: some View {
         ZStack {
@@ -13,7 +16,7 @@ struct SettingsView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppTheme.spacingLarge) {
                     appCard
-                    AISettingsView()
+                    AISettingsView(settingsStore: aiSettingsStore)
                     styleCard
                     mascotAssetCard
                     actionCard
@@ -23,16 +26,12 @@ struct SettingsView: View {
                 .padding(.top, 12)
                 .padding(.bottom, AppTheme.floatingTabBarBottomInset)
             }
+
+            if isShowingClearConfirmation {
+                clearConfirmationOverlay
+            }
         }
         .hideNavigationBarForPrototype()
-        .alert("清空全部数据？", isPresented: $isShowingClearConfirmation) {
-            Button("先不清空", role: .cancel) {}
-            Button("清空", role: .destructive) {
-                clearAllRecords()
-            }
-        } message: {
-            Text("清空后会把本地 JSON 账本写成空列表，这个操作后续可以再加备份恢复。")
-        }
     }
 
     private var appCard: some View {
@@ -87,10 +86,79 @@ struct SettingsView: View {
                 }
 
                 CuteButton(title: "清空全部数据", systemImage: "trash.fill", style: .danger) {
-                    isShowingClearConfirmation = true
+                    presentClearConfirmation()
                 }
+                .accessibilityIdentifier("settings.clearAllButton")
             }
         }
+    }
+
+    private var clearConfirmationOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.24)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    cancelClearConfirmation()
+                }
+
+            CuteCardView(padding: 18, cornerRadius: 28) {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 18, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .frame(width: 42, height: 42)
+                            .background(AppTheme.dangerGradient, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("确认清空全部数据")
+                                .font(.system(size: 20, weight: .heavy))
+                                .foregroundStyle(AppTheme.text)
+                            Text("账本、预算、周期模板和 AI 设置都会清空")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(AppTheme.secondaryText)
+                        }
+                    }
+
+                    Text("请输入“\(ClearAllDataConfirmation.requiredText)”后才可以删除。")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppTheme.text)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    TextField("输入确认文本", text: $clearConfirmationText)
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(AppTheme.text)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .focused($isClearConfirmationFocused)
+                        .padding(.vertical, 13)
+                        .padding(.horizontal, 14)
+                        .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(clearConfirmationMatches ? AppTheme.cherry.opacity(0.55) : AppTheme.border, lineWidth: 1.4)
+                        )
+                        .accessibilityIdentifier("settings.clearConfirmTextField")
+
+                    HStack(spacing: 10) {
+                        CuteButton(title: "取消", systemImage: "xmark.circle.fill", style: .secondary) {
+                            cancelClearConfirmation()
+                        }
+                        .accessibilityIdentifier("settings.clearCancelButton")
+
+                        CuteButton(title: "确认清空", systemImage: "trash.fill", style: .danger) {
+                            confirmClearAllData()
+                        }
+                        .disabled(!clearConfirmationMatches)
+                        .opacity(clearConfirmationMatches ? 1 : 0.45)
+                        .accessibilityIdentifier("settings.clearConfirmButton")
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+        .animation(.spring(response: 0.24, dampingFraction: 0.86), value: isShowingClearConfirmation)
     }
 
     private var mascotAssetCard: some View {
@@ -137,6 +205,32 @@ struct SettingsView: View {
         return "当前未检测到本地角色图片，会自动显示 SwiftUI 原创小猫占位。"
     }
 
+    private var clearConfirmationMatches: Bool {
+        ClearAllDataConfirmation.isConfirmed(clearConfirmationText)
+    }
+
+    private func presentClearConfirmation() {
+        clearConfirmationText = ""
+        isShowingClearConfirmation = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+            isClearConfirmationFocused = true
+        }
+    }
+
+    private func cancelClearConfirmation() {
+        isClearConfirmationFocused = false
+        clearConfirmationText = ""
+        isShowingClearConfirmation = false
+    }
+
+    private func confirmClearAllData() {
+        guard clearConfirmationMatches else {
+            return
+        }
+        clearAllData()
+        cancelClearConfirmation()
+    }
+
     private func presentShareSheet(format: ExportFormat) {
         do {
             let url = try writeExportFile(format: format)
@@ -169,9 +263,10 @@ struct SettingsView: View {
         return top
     }
 
-    private func clearAllRecords() {
+    private func clearAllData() {
         do {
-            try viewModel.clearAllRecords()
+            try viewModel.clearAllData()
+            try aiSettingsStore.resetAllSettings()
             viewModel.showToast("已清空全部数据")
         } catch {
             viewModel.showToast(error.localizedDescription)

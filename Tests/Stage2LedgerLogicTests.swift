@@ -6,11 +6,14 @@ struct Stage2LedgerLogicTests {
     static func main() throws {
         try testDefaultStoreStartsEmpty()
         try testStorePersistsAddDeleteAndClear()
+        try testCorruptLedgerStoreBlocksOverwrite()
         try testViewModelAddsRecordsAndCalculatesTotals()
         try testDisplayAmountSigns()
         try testAIResponseJSONExtractorHandlesMarkdown()
         try testAIParsePayloadDecodesMultipleRecords()
         try testAIParsePayloadKeepsLongRecordLists()
+        try testAIEntryExamplesUseCommonPrompts()
+        try testAISettingsRequireUserProvidedEndpoint()
         try testAIParseResultValidationFallsBackAndTruncates()
         try testAIParseResultValidationRequiresAmountAndType()
         try testAIParseResultValidationBuildsMultipleDrafts()
@@ -18,6 +21,9 @@ struct Stage2LedgerLogicTests {
         try testViewModelAddsConfirmedAIRecord()
         try testViewModelAddsConfirmedAIRecords()
         try testViewModelAddsManyConfirmedAIRecords()
+        try testClearAllDataClearsAdjacentStores()
+        try testRecurringRecordAdvancesOnePeriodAtATime()
+        try testClearAllDataConfirmationRequiresExactText()
         print("Stage2LedgerLogicTests passed")
     }
 
@@ -56,6 +62,37 @@ struct Stage2LedgerLogicTests {
         try afterDelete.clear()
         let afterClear = LedgerStore(fileURL: fileURL)
         assertEqual(afterClear.records.count, 0, "clear should persist an empty record list")
+    }
+
+    @MainActor
+    private static func testCorruptLedgerStoreBlocksOverwrite() throws {
+        let fileURL = temporaryLedgerURL()
+        try? FileManager.default.removeItem(at: fileURL)
+        try Data("not-json".utf8).write(to: fileURL)
+
+        let store = LedgerStore(fileURL: fileURL)
+        assertEqual(store.records.count, 0, "corrupt store should not expose invalid records")
+        assertEqual(store.lastErrorMessage != nil, true, "corrupt store should publish a load error")
+
+        let originalContents = try String(contentsOf: fileURL, encoding: .utf8)
+        let record = LedgerRecord(
+            amount: 18.5,
+            type: .expense,
+            category: "餐饮",
+            note: "测试午餐",
+            date: fixedDate(day: 5, hour: 12)
+        )
+        assertThrowsContaining(
+            try store.add(record),
+            "账本 JSON 读取失败",
+            "corrupt store should block ordinary writes"
+        )
+        let afterWriteAttempt = try String(contentsOf: fileURL, encoding: .utf8)
+        assertEqual(afterWriteAttempt, originalContents, "corrupt JSON should not be overwritten by an ordinary add")
+
+        let backups = try FileManager.default.contentsOfDirectory(at: fileURL.deletingLastPathComponent(), includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasPrefix(fileURL.lastPathComponent + ".corrupt-") }
+        assertEqual(backups.isEmpty, false, "corrupt JSON should be copied to a timestamped backup")
     }
 
     @MainActor
@@ -218,6 +255,28 @@ struct Stage2LedgerLogicTests {
         assertEqual(results.count, 25, "AI payload should not cap long record lists at two records")
         assertEqual(results.first?.amount, 1, "long payload should keep the first record")
         assertEqual(results.last?.amount, 25, "long payload should keep the final record")
+    }
+
+    private static func testAIEntryExamplesUseCommonPrompts() throws {
+        assertEqual(
+            AIEntryExamples.prompts.contains { $0.contains("豫小七") },
+            false,
+            "AI entry examples should avoid the old shop-specific takeaway prompt"
+        )
+        assertEqual(
+            AIEntryExamples.prompts.count >= 8,
+            true,
+            "AI entry examples should provide several common prompts"
+        )
+    }
+
+    private static func testAISettingsRequireUserProvidedEndpoint() throws {
+        let settings = AISettings()
+
+        assertEqual(settings.apiBaseURL, "", "AI settings should not ship with a private API base URL")
+        assertEqual(settings.fallbackBaseURL, "", "AI settings should not ship with a private fallback URL")
+        assertEqual(settings.useFallbackWhenPrimaryFails, false, "fallback retry should be opt-in when no fallback URL is configured")
+        assertEqual(settings.hasConfiguredBaseURL, false, "default AI settings should require user configuration before network calls")
     }
 
     private static func testAIParseResultValidationFallsBackAndTruncates() throws {
@@ -427,6 +486,90 @@ struct Stage2LedgerLogicTests {
         assertEqual(viewModel.monthExpenseTotal, 325, "batch AI save should update totals for every record")
     }
 
+    @MainActor
+    private static func testClearAllDataClearsAdjacentStores() throws {
+        let ledgerURL = temporaryLedgerURL()
+        let budgetURL = temporaryStoreURL(prefix: "BeanLedgerBudgetStage2Tests")
+        let recurringURL = temporaryStoreURL(prefix: "BeanLedgerRecurringStage2Tests")
+        try? FileManager.default.removeItem(at: ledgerURL)
+        try? FileManager.default.removeItem(at: budgetURL)
+        try? FileManager.default.removeItem(at: recurringURL)
+
+        let store = LedgerStore(fileURL: ledgerURL)
+        let budgetStore = BudgetStore(fileURL: budgetURL)
+        let recurringStore = RecurringStore(fileURL: recurringURL)
+        let viewModel = LedgerViewModel(store: store, budgetStore: budgetStore, recurringStore: recurringStore, calendar: calendar)
+
+        try viewModel.addRecord(amount: 30, type: .expense, category: "餐饮", note: "早餐", date: fixedDate(day: 7, hour: 8))
+        try viewModel.setBudget(category: nil, amountText: "1000")
+        try viewModel.addRecurringTemplate(
+            title: "房租",
+            amountText: "2700",
+            type: .expense,
+            category: "房租",
+            note: "月租",
+            frequency: .monthly,
+            startDate: fixedDate(day: 1, hour: 9),
+            isEnabled: true
+        )
+
+        assertEqual(viewModel.records.count, 1, "test setup should create one record")
+        assertEqual(viewModel.budgets.count, 1, "test setup should create one budget")
+        assertEqual(viewModel.recurringTemplates.count, 1, "test setup should create one recurring template")
+
+        try viewModel.clearAllData()
+
+        assertEqual(viewModel.records.count, 0, "clear all should clear ledger records")
+        assertEqual(viewModel.budgets.count, 0, "clear all should clear budgets")
+        assertEqual(viewModel.recurringTemplates.count, 0, "clear all should clear recurring templates")
+        assertEqual(LedgerStore(fileURL: ledgerURL).records.count, 0, "clear all should persist empty records")
+        assertEqual(BudgetStore(fileURL: budgetURL).budgets.count, 0, "clear all should persist empty budgets")
+        assertEqual(RecurringStore(fileURL: recurringURL).templates.count, 0, "clear all should persist empty recurring templates")
+    }
+
+    @MainActor
+    private static func testRecurringRecordAdvancesOnePeriodAtATime() throws {
+        guard let startDate = calendar.date(byAdding: .month, value: -3, to: Date()) else {
+            throw TestFailure("expected calendar to create an overdue start date")
+        }
+        let template = RecurringRecordTemplate(
+            title: "房租",
+            amount: 2700,
+            type: .expense,
+            category: "房租",
+            note: "月租",
+            frequency: .monthly,
+            startDate: startDate
+        )
+        let viewModel = LedgerViewModel(
+            store: LedgerStore.inMemory(),
+            budgetStore: BudgetStore.inMemory(),
+            recurringStore: RecurringStore.inMemory(templates: [template]),
+            calendar: calendar
+        )
+
+        viewModel.checkDueRecurringTemplates()
+        assertEqual(viewModel.dueRecurringTemplates.count, 1, "overdue recurring template should be due")
+
+        try viewModel.generateRecurringRecord(template)
+
+        guard let updated = viewModel.recurringTemplates.first else {
+            throw TestFailure("expected recurring template to remain after generating one record")
+        }
+        let expectedNextDueDate = template.frequency.nextDate(after: template.nextDueDate, calendar: calendar)
+        assertEqual(updated.nextDueDate, expectedNextDueDate, "generating one recurring record should advance exactly one period")
+        assertEqual(viewModel.records.count, 1, "generating one recurring template should create one ledger record")
+        assertEqual(viewModel.dueRecurringTemplates.count, 1, "older missed recurring periods should remain due after one generation")
+    }
+
+    private static func testClearAllDataConfirmationRequiresExactText() throws {
+        assertEqual(ClearAllDataConfirmation.requiredText, "清空全部数据", "clear confirmation should expose the required phrase")
+        assertEqual(ClearAllDataConfirmation.isConfirmed("清空全部数据"), true, "exact phrase should confirm clearing data")
+        assertEqual(ClearAllDataConfirmation.isConfirmed("  清空全部数据  "), true, "surrounding whitespace should be ignored")
+        assertEqual(ClearAllDataConfirmation.isConfirmed("清空数据"), false, "partial phrase should not confirm clearing data")
+        assertEqual(ClearAllDataConfirmation.isConfirmed(""), false, "empty phrase should not confirm clearing data")
+    }
+
     private static let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Shanghai")!
@@ -450,6 +593,11 @@ struct Stage2LedgerLogicTests {
             .appendingPathComponent("BeanLedgerStage2Tests-\(UUID().uuidString).json")
     }
 
+    private static func temporaryStoreURL(prefix: String) -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(prefix)-\(UUID().uuidString).json")
+    }
+
     private static func assertEqual<T: Equatable>(_ actual: T, _ expected: T, _ message: String) {
         if actual != expected {
             fatalError("\(message). Expected \(expected), got \(actual)")
@@ -463,6 +611,17 @@ struct Stage2LedgerLogicTests {
         } catch {
             if error.localizedDescription != expectedMessage {
                 fatalError("\(message). Expected error \(expectedMessage), got \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private static func assertThrowsContaining<T>(_ operation: @autoclosure () throws -> T, _ expectedText: String, _ message: String) {
+        do {
+            _ = try operation()
+            fatalError("\(message). Expected error containing \(expectedText), but operation succeeded")
+        } catch {
+            if !error.localizedDescription.contains(expectedText) {
+                fatalError("\(message). Expected error containing \(expectedText), got \(error.localizedDescription)")
             }
         }
     }

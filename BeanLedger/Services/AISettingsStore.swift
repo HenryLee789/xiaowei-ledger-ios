@@ -105,7 +105,7 @@ final class AISettingsStore: ObservableObject {
     private let userDefaults: UserDefaults
     private let apiKeyStorage: AIAPIKeyStorage
     private let service: AIService
-    private let settingsKey = "BeanLedger.AISettings.v1"
+    private static let settingsKey = "BeanLedger.AISettings.v2"
 
     init(
         userDefaults: UserDefaults = .standard,
@@ -117,7 +117,7 @@ final class AISettingsStore: ObservableObject {
         self.service = service
 
         var loadedSettings: AISettings
-        if let data = userDefaults.data(forKey: settingsKey),
+        if let data = userDefaults.data(forKey: Self.settingsKey),
            let decoded = try? JSONDecoder().decode(AISettings.self, from: data) {
             loadedSettings = decoded
         } else {
@@ -129,6 +129,10 @@ final class AISettingsStore: ObservableObject {
             loadedSettings.enableMockParsing = true
         }
         #endif
+
+        if loadedSettings.fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            loadedSettings.useFallbackWhenPrimaryFails = false
+        }
 
         self.settings = loadedSettings
         self.apiKey = (try? apiKeyStorage.readAPIKey()) ?? ""
@@ -172,8 +176,17 @@ final class AISettingsStore: ObservableObject {
         }
     }
 
+    func resetAllSettings() throws {
+        try apiKeyStorage.deleteAPIKey()
+        apiKey = ""
+        availableModels = []
+        modelListMessage = nil
+        settings = AISettings()
+        settingsMessage = "AI 设置和 API Key 已清空"
+    }
+
     private func persistSettings() {
         guard let data = try? JSONEncoder().encode(settings) else { return }
-        userDefaults.set(data, forKey: settingsKey)
+        userDefaults.set(data, forKey: Self.settingsKey)
     }
 }

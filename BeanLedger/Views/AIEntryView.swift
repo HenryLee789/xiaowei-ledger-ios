@@ -6,13 +6,7 @@ struct AIEntryView: View {
     @StateObject private var settingsStore = AISettingsStore()
     @StateObject private var aiViewModel = AIEntryViewModel()
 
-    private let examples = [
-        "发工资6926，豫小七外卖29.47",
-        "今天午饭花了28",
-        "工资到账8500",
-        "存了500到攒豆豆",
-        "还信用卡1200"
-    ]
+    private let examples = AIEntryExamples.prompts
 
     var body: some View {
         ZStack {

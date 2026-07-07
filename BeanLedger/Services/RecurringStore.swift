@@ -14,6 +14,7 @@ final class RecurringStore: ObservableObject {
 
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
+    private var loadFailureMessage: String?
 
     init(fileURL: URL? = RecurringStore.defaultFileURL, seedTemplates: [RecurringRecordTemplate] = []) {
         self.fileURL = fileURL
@@ -23,10 +24,15 @@ final class RecurringStore: ObservableObject {
         encoder.dateEncodingStrategy = .iso8601
         decoder.dateDecodingStrategy = .iso8601
 
-        if let loadedTemplates = Self.loadTemplates(from: fileURL, decoder: decoder) {
+        switch Self.loadTemplates(from: fileURL, decoder: decoder) {
+        case .loaded(let loadedTemplates):
             templates = loadedTemplates
-        } else {
+        case .missing:
             templates = seedTemplates
+        case .failed(let message):
+            templates = seedTemplates
+            loadFailureMessage = message
+            lastErrorMessage = message
         }
     }
 
@@ -35,29 +41,62 @@ final class RecurringStore: ObservableObject {
     }
 
     func add(_ template: RecurringRecordTemplate) throws {
+        let previousTemplates = templates
         templates.insert(template, at: 0)
-        try persist()
+        do {
+            try persist()
+        } catch {
+            templates = previousTemplates
+            throw error
+        }
     }
 
     func update(_ template: RecurringRecordTemplate) throws {
         guard let index = templates.firstIndex(where: { $0.id == template.id }) else { return }
+        let previousTemplates = templates
         templates[index] = template
-        try persist()
+        do {
+            try persist()
+        } catch {
+            templates = previousTemplates
+            throw error
+        }
     }
 
     func delete(templateID: UUID) throws {
+        let previousTemplates = templates
         templates.removeAll { $0.id == templateID }
-        try persist()
+        do {
+            try persist()
+        } catch {
+            templates = previousTemplates
+            throw error
+        }
     }
 
-    private func persist() throws {
+    func clear() throws {
+        let previousTemplates = templates
+        templates.removeAll()
+        do {
+            try persist(allowReplacingCorruptFile: true)
+        } catch {
+            templates = previousTemplates
+            throw error
+        }
+    }
+
+    private func persist(allowReplacingCorruptFile: Bool = false) throws {
         guard let fileURL else { return }
+        if let loadFailureMessage, !allowReplacingCorruptFile {
+            throw JSONStorePersistenceError.corruptFileNeedsRecovery(loadFailureMessage)
+        }
 
         do {
             let folderURL = fileURL.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
             let data = try encoder.encode(templates)
             try data.write(to: fileURL, options: [.atomic])
+            loadFailureMessage = nil
             lastErrorMessage = nil
         } catch {
             lastErrorMessage = error.localizedDescription
@@ -65,17 +104,17 @@ final class RecurringStore: ObservableObject {
         }
     }
 
-    private static func loadTemplates(from fileURL: URL?, decoder: JSONDecoder) -> [RecurringRecordTemplate]? {
+    private static func loadTemplates(from fileURL: URL?, decoder: JSONDecoder) -> JSONStoreLoadResult<[RecurringRecordTemplate]> {
         guard let fileURL, FileManager.default.fileExists(atPath: fileURL.path) else {
-            return nil
+            return .missing
         }
 
         do {
             let data = try Data(contentsOf: fileURL)
-            return try decoder.decode([RecurringRecordTemplate].self, from: data)
+            return .loaded(try decoder.decode([RecurringRecordTemplate].self, from: data))
         } catch {
-            return []
+            JSONCorruptionBackup.backupIfPresent(fileURL: fileURL)
+            return .failed("周期模板 JSON 读取失败，已保留损坏文件备份；请先恢复数据后再继续写入。")
         }
     }
 }
-

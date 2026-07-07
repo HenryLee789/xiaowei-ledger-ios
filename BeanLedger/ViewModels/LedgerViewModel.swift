@@ -3,6 +3,7 @@ import Foundation
 enum LedgerInputError: LocalizedError {
     case invalidAmount
     case persistenceFailed(String)
+    case invalidRecurringDate
 
     var errorDescription: String? {
         switch self {
@@ -10,7 +11,17 @@ enum LedgerInputError: LocalizedError {
             return "金额要大于 0 哦"
         case .persistenceFailed(let message):
             return "保存失败：\(message)"
+        case .invalidRecurringDate:
+            return "周期日期计算失败，请重新创建模板"
         }
+    }
+}
+
+enum ClearAllDataConfirmation {
+    static let requiredText = "清空全部数据"
+
+    static func isConfirmed(_ input: String) -> Bool {
+        input.trimmingCharacters(in: .whitespacesAndNewlines) == requiredText
     }
 }
 
@@ -282,11 +293,26 @@ final class LedgerViewModel: ObservableObject {
 
     @discardableResult
     func addRecords(from aiDrafts: [AIParsedLedgerDraft]) throws -> [LedgerRecord] {
-        var createdRecords: [LedgerRecord] = []
-        for draft in aiDrafts {
-            createdRecords.append(try addRecord(from: draft))
+        let createdAt = Date()
+        let recordsToAdd = aiDrafts.map { draft in
+            LedgerRecord(
+                amount: draft.amount,
+                type: draft.type,
+                category: draft.category,
+                note: draft.note,
+                date: draft.date,
+                createdAt: createdAt
+            )
         }
-        return createdRecords
+
+        do {
+            try store.add(recordsToAdd)
+            syncFromStore()
+            checkDueRecurringTemplates()
+            return recordsToAdd
+        } catch {
+            throw LedgerInputError.persistenceFailed(error.localizedDescription)
+        }
     }
 
     func delete(_ record: LedgerRecord) throws {
@@ -305,6 +331,21 @@ final class LedgerViewModel: ObservableObject {
             try store.clear()
             RecordImageStore.clearAllImages()
             syncFromStore()
+            checkDueRecurringTemplates()
+        } catch {
+            throw LedgerInputError.persistenceFailed(error.localizedDescription)
+        }
+    }
+
+    func clearAllData() throws {
+        do {
+            try store.clear()
+            try budgetStore.clear()
+            try recurringStore.clear()
+            RecordImageStore.clearAllImages()
+            syncFromStore()
+            syncBudgets()
+            syncRecurringTemplates()
             checkDueRecurringTemplates()
         } catch {
             throw LedgerInputError.persistenceFailed(error.localizedDescription)
@@ -595,9 +636,11 @@ final class LedgerViewModel: ObservableObject {
 
     private func advanceRecurringTemplate(_ template: RecurringRecordTemplate) throws {
         var updated = template
-        repeat {
-            updated.nextDueDate = updated.frequency.nextDate(after: updated.nextDueDate, calendar: calendar)
-        } while updated.nextDueDate <= Date()
+        let nextDueDate = updated.frequency.nextDate(after: updated.nextDueDate, calendar: calendar)
+        guard nextDueDate > updated.nextDueDate else {
+            throw LedgerInputError.invalidRecurringDate
+        }
+        updated.nextDueDate = nextDueDate
 
         do {
             try recurringStore.update(updated)

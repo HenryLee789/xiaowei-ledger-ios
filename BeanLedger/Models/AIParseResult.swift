@@ -70,6 +70,22 @@ struct AIParseResult: Codable, Equatable {
     }
 }
 
+enum AIEntryExamples {
+    static let prompts = [
+        "早餐包子豆浆12",
+        "午饭花了28",
+        "地铁通勤6",
+        "打车去客户那边42.8",
+        "超市买日用品136.5",
+        "奶茶18",
+        "工资到账8500",
+        "报销餐费128",
+        "存500到备用金",
+        "还信用卡1200",
+        "工资8500，午饭28，打车42.8"
+    ]
+}
+
 enum AIParsePayload {
     static func decodeResults(from data: Data) throws -> [AIParseResult] {
         let decoder = JSONDecoder()
