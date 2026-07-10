@@ -6,7 +6,7 @@ struct CuteMascotView: View {
     var body: some View {
         ZStack {
             Triangle()
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: size * 0.28, height: size * 0.25)
                 .rotationEffect(.degrees(-18))
                 .offset(x: -size * 0.28, y: -size * 0.30)
@@ -19,7 +19,7 @@ struct CuteMascotView: View {
                 )
 
             Triangle()
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: size * 0.28, height: size * 0.25)
                 .rotationEffect(.degrees(18))
                 .offset(x: size * 0.28, y: -size * 0.30)
@@ -32,7 +32,7 @@ struct CuteMascotView: View {
                 )
 
             Circle()
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: size * 0.78, height: size * 0.70)
                 .overlay(
                     Circle()

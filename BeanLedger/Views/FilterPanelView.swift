@@ -27,7 +27,7 @@ struct FilterPanelView: View {
                 .foregroundStyle(AppTheme.text)
         }
         .padding(15)
-        .background(Color.white.opacity(0.88), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.88), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(AppTheme.border, lineWidth: 1)
@@ -185,7 +185,7 @@ struct FilterPanelView: View {
                 .decimalPadKeyboard()
                 .font(.system(size: 14, weight: .semibold))
                 .padding(12)
-                .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 15, style: .continuous)
                         .stroke(AppTheme.border, lineWidth: 1)

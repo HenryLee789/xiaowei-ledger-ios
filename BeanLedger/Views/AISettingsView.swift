@@ -98,7 +98,7 @@ struct AISettingsView: View {
                 .autocorrectionDisabled()
                 .font(.system(size: 15, weight: .semibold))
                 .padding(13)
-                .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(AppTheme.border, lineWidth: 1)
@@ -164,7 +164,7 @@ struct AISettingsView: View {
         .disabled(!hasFallbackURL)
         .opacity(hasFallbackURL ? 1 : 0.58)
         .padding(12)
-        .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityIdentifier("aiSettings.fallbackToggle")
     }
 
@@ -204,7 +204,7 @@ struct AISettingsView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(AppTheme.text)
                 .padding(13)
-                .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(AppTheme.border, lineWidth: 1)
@@ -222,7 +222,7 @@ struct AISettingsView: View {
                 .padding(.vertical, 9)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity)
-                .background(Color.white.opacity(0.82), in: Capsule())
+                .background(AppTheme.elevatedSurface.opacity(0.82), in: Capsule())
                 .overlay(
                     Capsule()
                         .stroke(AppTheme.border, lineWidth: 1)
@@ -243,7 +243,7 @@ struct AISettingsView: View {
 struct AISettingsView_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
-            DottedBackground().ignoresSafeArea()
+            DottedBackground().ignoresSafeArea(edges: [.top, .bottom])
             AISettingsView(settingsStore: AISettingsStore())
                 .padding()
         }

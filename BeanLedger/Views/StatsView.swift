@@ -12,7 +12,7 @@ struct StatsView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppTheme.spacingLarge) {
@@ -29,6 +29,7 @@ struct StatsView: View {
                 .padding(.bottom, AppTheme.floatingTabBarBottomInset)
             }
         }
+        .protectsTopSafeArea()
         .hideNavigationBarForPrototype()
     }
 
@@ -118,7 +119,7 @@ struct StatsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(Color.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(AppTheme.elevatedSurface.opacity(0.68), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(CutePressButtonStyle())
     }

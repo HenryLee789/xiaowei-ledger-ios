@@ -12,7 +12,7 @@ struct AIEntryView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppTheme.spacingLarge) {
@@ -43,6 +43,7 @@ struct AIEntryView: View {
                 .padding(.bottom, AppTheme.floatingTabBarBottomInset)
             }
         }
+        .protectsTopSafeArea()
         .hideNavigationBarForPrototype()
         .sheet(item: $editingDraft) { selection in
             AIParsedDraftEditorView(draft: selection.draft) { updatedDraft in
@@ -63,7 +64,7 @@ struct AIEntryView: View {
                         .font(.system(size: 16, weight: .heavy))
                         .foregroundStyle(AppTheme.cherry)
                         .frame(width: 38, height: 38)
-                        .background(Color.white.opacity(0.82), in: Circle())
+                        .background(AppTheme.elevatedSurface.opacity(0.82), in: Circle())
                         .overlay(
                             Circle()
                                 .stroke(AppTheme.border, lineWidth: 1)
@@ -100,7 +101,7 @@ struct AIEntryView: View {
                         .frame(minHeight: 136)
                         .padding(10)
                         .scrollContentBackground(.hidden)
-                        .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 20, style: .continuous)
                                 .stroke(AppTheme.border, lineWidth: 1)
@@ -227,7 +228,7 @@ private struct AIParsedDraftEditorView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
@@ -255,7 +256,7 @@ private struct AIParsedDraftEditorView: View {
             HStack(spacing: 12) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppTheme.onAccentText)
                     .frame(width: 48, height: 48)
                     .background(AppTheme.buttonGradient, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
                 VStack(alignment: .leading, spacing: 4) {
@@ -282,7 +283,7 @@ private struct AIParsedDraftEditorView: View {
                     .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppTheme.text)
                     .padding(14)
-                    .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .stroke(AppTheme.border, lineWidth: 1)
@@ -344,7 +345,7 @@ private struct AIParsedDraftEditorView: View {
                 TextField("备注", text: $note)
                     .font(.system(size: 15, weight: .semibold))
                     .padding(14)
-                    .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .stroke(AppTheme.border, lineWidth: 1)
@@ -355,7 +356,7 @@ private struct AIParsedDraftEditorView: View {
                     .font(.system(size: 14, weight: .bold))
                     .tint(AppTheme.cherry)
                     .padding(12)
-                    .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
         }
     }

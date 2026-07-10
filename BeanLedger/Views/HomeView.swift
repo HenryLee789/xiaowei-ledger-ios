@@ -12,7 +12,7 @@ struct HomeView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppTheme.spacingLarge) {
@@ -27,6 +27,7 @@ struct HomeView: View {
                 .padding(.bottom, AppTheme.floatingTabBarBottomInset)
             }
         }
+        .protectsTopSafeArea()
         .hideNavigationBarForPrototype()
     }
 
@@ -36,16 +37,16 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("小魏记账簿")
                         .font(.system(size: 30, weight: .heavy))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppTheme.onAccentText)
                     Text(Date().homeTitle)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.88))
+                        .foregroundStyle(AppTheme.onAccentText.opacity(0.88))
                     Text("今天也要认真记账呀")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(AppTheme.text)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 14)
-                        .background(Color.white.opacity(0.72), in: Capsule())
+                        .background(AppTheme.elevatedSurface.opacity(0.72), in: Capsule())
                 }
 
                 Spacer(minLength: 10)
@@ -91,7 +92,7 @@ struct HomeView: View {
                 HStack(spacing: 14) {
                     Image(systemName: "wand.and.stars")
                         .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppTheme.onAccentText)
                         .frame(width: 46, height: 46)
                         .background(AppTheme.buttonGradient, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
@@ -257,7 +258,7 @@ struct RecordReceiptRow: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(AppTheme.border.opacity(0.7), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
@@ -277,7 +278,7 @@ struct DeletableRecordRow: View {
             Button(action: onDelete) {
                 Label("删除", systemImage: "trash.fill")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppTheme.onAccentText)
                     .frame(width: 78, height: 58)
                     .background(AppTheme.cherry, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }

@@ -11,7 +11,7 @@ struct BudgetView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppTheme.spacingLarge) {
@@ -104,7 +104,7 @@ struct BudgetView: View {
                         .decimalPadKeyboard()
                         .font(.system(size: 15, weight: .semibold))
                         .padding(13)
-                        .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
                                 .stroke(AppTheme.border, lineWidth: 1)
@@ -118,7 +118,7 @@ struct BudgetView: View {
                     } label: {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppTheme.onAccentText)
                             .frame(width: 46, height: 46)
                             .background(AppTheme.expensePrimary, in: Circle())
                     }
@@ -187,7 +187,7 @@ private struct BudgetCategoryRow: View {
                     .frame(width: 86)
                     .padding(.vertical, 9)
                     .padding(.horizontal, 10)
-                    .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(AppTheme.elevatedSurface.opacity(0.82), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .stroke(AppTheme.border, lineWidth: 1)
@@ -195,7 +195,7 @@ private struct BudgetCategoryRow: View {
                 Button(action: saveAction) {
                     Image(systemName: "checkmark")
                         .font(.system(size: 13, weight: .heavy))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppTheme.onAccentText)
                         .frame(width: 32, height: 32)
                         .background(AppTheme.expensePrimary, in: Circle())
                 }
@@ -205,7 +205,7 @@ private struct BudgetCategoryRow: View {
             BudgetProgressView(budgetAmount: budgetAmount, usedAmount: usedAmount, compact: true)
         }
         .padding(13)
-        .background(Color.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.68), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 

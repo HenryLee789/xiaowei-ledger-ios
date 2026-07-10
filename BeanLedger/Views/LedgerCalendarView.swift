@@ -14,7 +14,7 @@ struct LedgerCalendarView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppTheme.spacingLarge) {
@@ -196,7 +196,7 @@ private struct CalendarDayCell: View {
             VStack(spacing: 4) {
                 Text(dayNumber)
                     .font(.system(size: 13, weight: .heavy))
-                    .foregroundStyle(isToday ? .white : isInMonth ? AppTheme.text : AppTheme.secondaryText.opacity(0.5))
+                    .foregroundStyle(isToday ? AppTheme.onAccentText : isInMonth ? AppTheme.text : AppTheme.secondaryText.opacity(0.5))
                     .frame(width: 26, height: 26)
                     .background(isToday ? AppTheme.cherry : Color.clear, in: Circle())
 
@@ -226,7 +226,7 @@ private struct CalendarDayCell: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 76)
-            .background((hasRecords ? Color.white.opacity(0.82) : Color.white.opacity(0.48)), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background((hasRecords ? AppTheme.elevatedSurface.opacity(0.82) : AppTheme.elevatedSurface.opacity(0.48)), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .opacity(isInMonth ? 1 : 0.42)
         }
         .buttonStyle(CutePressButtonStyle())

@@ -62,7 +62,7 @@ struct QuickEntryView: View {
                             .decimalPadKeyboard()
                             .font(.system(size: 15, weight: .semibold))
                             .padding(12)
-                            .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .stroke(AppTheme.border, lineWidth: 1)
@@ -105,14 +105,14 @@ struct QuickEntryView: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(isSelected ? .white : color)
+                .foregroundStyle(isSelected ? AppTheme.onAccentText : color)
                 .lineLimit(1)
                 .padding(.vertical, 9)
                 .padding(.horizontal, 13)
                 .background(isSelected ? color : color.opacity(0.12), in: Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.white.opacity(0.4) : color.opacity(0.24), lineWidth: 1)
+                        .stroke(isSelected ? AppTheme.onAccentText.opacity(0.4) : color.opacity(0.24), lineWidth: 1)
                 )
         }
         .buttonStyle(CutePressButtonStyle())

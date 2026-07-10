@@ -41,7 +41,7 @@ struct CuteButton: View {
     private var foreground: Color {
         switch style {
         case .primary, .danger:
-            return .white
+            return AppTheme.onAccentText
         case .secondary:
             return AppTheme.cherry
         }
@@ -53,14 +53,14 @@ struct CuteButton: View {
         case .primary:
             AppTheme.buttonGradient
         case .secondary:
-            Color.white
+            AppTheme.elevatedSurface
         case .danger:
             AppTheme.dangerGradient
         }
     }
 
     private var border: Color {
-        style == .secondary ? AppTheme.border : Color.white.opacity(0.35)
+        style == .secondary ? AppTheme.border : AppTheme.elevatedSurface.opacity(0.35)
     }
 }
 

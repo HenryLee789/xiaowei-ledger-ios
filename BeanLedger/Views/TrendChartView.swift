@@ -77,7 +77,7 @@ struct TrendChartView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 22)
-                    .background(Color.white.opacity(0.65), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(AppTheme.elevatedSurface.opacity(0.65), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
         }
@@ -97,7 +97,7 @@ struct TrendChartView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -113,7 +113,7 @@ private struct TrendLineChart: View {
         GeometryReader { proxy in
             ZStack(alignment: .bottomLeading) {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white.opacity(0.72))
+                    .fill(AppTheme.elevatedSurface.opacity(0.72))
                 VStack(spacing: proxy.size.height / 4) {
                     ForEach(0..<4, id: \.self) { _ in
                         Rectangle()
@@ -155,7 +155,7 @@ private struct TrendLineChart: View {
 
                 ForEach(Array(chartPoints(in: proxy.size).enumerated()), id: \.offset) { _, point in
                     Circle()
-                        .fill(Color.white)
+                        .fill(AppTheme.onAccentText)
                         .frame(width: 8, height: 8)
                         .overlay(Circle().stroke(tint, lineWidth: 2))
                         .position(point)

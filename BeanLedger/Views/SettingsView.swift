@@ -11,7 +11,7 @@ struct SettingsView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppTheme.spacingLarge) {
@@ -31,6 +31,7 @@ struct SettingsView: View {
                 clearConfirmationOverlay
             }
         }
+        .protectsTopSafeArea()
         .hideNavigationBarForPrototype()
     }
 
@@ -95,8 +96,8 @@ struct SettingsView: View {
 
     private var clearConfirmationOverlay: some View {
         ZStack {
-            Color.black.opacity(0.24)
-                .ignoresSafeArea()
+            AppTheme.overlayScrim.opacity(0.52)
+                .ignoresSafeArea(edges: [.top, .bottom])
                 .onTapGesture {
                     cancelClearConfirmation()
                 }
@@ -106,7 +107,7 @@ struct SettingsView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "trash.fill")
                             .font(.system(size: 18, weight: .heavy))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppTheme.onAccentText)
                             .frame(width: 42, height: 42)
                             .background(AppTheme.dangerGradient, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
 
@@ -133,7 +134,7 @@ struct SettingsView: View {
                         .focused($isClearConfirmationFocused)
                         .padding(.vertical, 13)
                         .padding(.horizontal, 14)
-                        .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .background(AppTheme.elevatedSurface.opacity(0.82), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .stroke(clearConfirmationMatches ? AppTheme.cherry.opacity(0.55) : AppTheme.border, lineWidth: 1.4)

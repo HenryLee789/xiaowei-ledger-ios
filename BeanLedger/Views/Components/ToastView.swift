@@ -6,7 +6,7 @@ struct ToastView: View {
     var body: some View {
         Text(message)
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(AppTheme.onAccentText)
             .padding(.vertical, 11)
             .padding(.horizontal, 16)
             .background(AppTheme.cherry.opacity(0.94), in: Capsule())

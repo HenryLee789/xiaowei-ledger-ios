@@ -9,7 +9,7 @@ struct DayRecordListSheet: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
@@ -65,7 +65,7 @@ struct DayRecordListSheet: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func total(_ type: LedgerType) -> Double {

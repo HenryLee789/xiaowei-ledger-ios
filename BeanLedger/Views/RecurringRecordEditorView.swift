@@ -17,7 +17,7 @@ struct RecurringRecordEditorView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
@@ -92,7 +92,7 @@ struct RecurringRecordEditorView: View {
                         } label: {
                             Text(type.displayName)
                                 .font(.system(size: 13, weight: .heavy))
-                                .foregroundStyle(selectedType == type ? .white : type.tint)
+                                .foregroundStyle(selectedType == type ? AppTheme.onAccentText : type.tint)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                                 .frame(maxWidth: .infinity)
@@ -139,13 +139,13 @@ struct RecurringRecordEditorView: View {
                     .font(.system(size: 14, weight: .bold))
                     .tint(AppTheme.cherry)
                     .padding(12)
-                    .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                 Toggle("启用模板", isOn: $isEnabled)
                     .font(.system(size: 14, weight: .bold))
                     .tint(AppTheme.cherry)
                     .padding(12)
-                    .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
         }
     }
@@ -169,7 +169,7 @@ struct RecurringRecordEditorView: View {
             TextField(placeholder, text: text)
                 .font(.system(size: 15, weight: .semibold))
                 .padding(14)
-                .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(AppTheme.border, lineWidth: 1)
@@ -237,4 +237,3 @@ struct RecurringRecordEditorView_Previews: PreviewProvider {
     }
 }
 #endif
-

@@ -77,7 +77,7 @@ struct AIParseConfirmationView: View {
                         .foregroundStyle(AppTheme.cherry)
                         .padding(.vertical, 7)
                         .padding(.horizontal, 10)
-                        .background(Color.white.opacity(0.82), in: Capsule())
+                        .background(AppTheme.elevatedSurface.opacity(0.82), in: Capsule())
                         .overlay(
                             Capsule()
                                 .stroke(AppTheme.border, lineWidth: 1)
@@ -121,7 +121,7 @@ struct AIParseConfirmationView: View {
                 .multilineTextAlignment(.leading)
         }
         .padding(12)
-        .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(AppTheme.border.opacity(0.75), lineWidth: 1)

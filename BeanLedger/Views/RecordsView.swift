@@ -20,7 +20,7 @@ struct RecordsView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppTheme.spacingLarge) {
@@ -39,6 +39,7 @@ struct RecordsView: View {
                 .padding(.bottom, AppTheme.floatingTabBarBottomInset)
             }
         }
+        .protectsTopSafeArea()
         .hideNavigationBarForPrototype()
     }
 
@@ -122,7 +123,7 @@ struct RecordsView: View {
             Spacer(minLength: 0)
         }
         .padding(10)
-        .background(Color.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.68), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func moveMonth(by value: Int) {
@@ -150,4 +151,3 @@ struct RecordsView_Previews: PreviewProvider {
     }
 }
 #endif
-

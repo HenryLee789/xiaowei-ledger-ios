@@ -27,7 +27,7 @@ struct AddRecordView: View {
     var body: some View {
         ZStack(alignment: .top) {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
@@ -98,7 +98,7 @@ struct AddRecordView: View {
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 14)
-                .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .background(AppTheme.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(AppTheme.border, lineWidth: 1)
@@ -167,7 +167,7 @@ struct AddRecordView: View {
                     TextField("写点可爱的小备注", text: $note)
                         .font(.system(size: 15, weight: .semibold))
                         .padding(14)
-                        .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .stroke(AppTheme.border, lineWidth: 1)
@@ -187,7 +187,7 @@ struct AddRecordView: View {
                         .tint(AppTheme.cherry)
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .background(AppTheme.elevatedSurface.opacity(0.78), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
                                 .stroke(AppTheme.border, lineWidth: 1)
@@ -228,7 +228,7 @@ struct AddRecordView: View {
                             .foregroundStyle(AppTheme.cherry)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 12)
-                            .background(Color.white.opacity(0.84), in: Capsule())
+                            .background(AppTheme.elevatedSurface.opacity(0.84), in: Capsule())
                             .overlay(
                                 Capsule()
                                     .stroke(AppTheme.border, lineWidth: 1)
@@ -348,7 +348,7 @@ private struct AddTypeButton: View {
         Button(action: action) {
             Text(type.displayName)
                 .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(isSelected ? .white : type.tint)
+                .foregroundStyle(isSelected ? AppTheme.onAccentText : type.tint)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
@@ -359,7 +359,7 @@ private struct AddTypeButton: View {
                 )
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.white.opacity(0.45) : type.tint.opacity(0.24), lineWidth: 1)
+                        .stroke(isSelected ? AppTheme.onAccentText.opacity(0.45) : type.tint.opacity(0.24), lineWidth: 1)
                 )
         }
         .buttonStyle(CutePressButtonStyle())

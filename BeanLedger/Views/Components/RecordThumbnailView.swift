@@ -36,7 +36,7 @@ struct RecordImagePreview: View {
         .clipShape(RoundedRectangle(cornerRadius: size * 0.35, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: size * 0.35, style: .continuous)
-                .stroke(Color.white.opacity(0.78), lineWidth: 1.2)
+                .stroke(AppTheme.onAccentText.opacity(0.78), lineWidth: 1.2)
         )
         .background(AppTheme.softBackground(for: type), in: RoundedRectangle(cornerRadius: size * 0.35, style: .continuous))
     }
@@ -45,16 +45,16 @@ struct RecordImagePreview: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(hex: "FFF8DC"),
+                    AppTheme.lemon,
                     AppTheme.softBackground(for: type).opacity(0.92),
-                    Color.white.opacity(0.95)
+                    AppTheme.elevatedSurface.opacity(0.95)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
 
             Circle()
-                .fill(Color.white.opacity(0.38))
+                .fill(AppTheme.elevatedSurface.opacity(0.38))
                 .frame(width: size * 0.84, height: size * 0.84)
                 .offset(x: -size * 0.18, y: -size * 0.18)
 
@@ -147,7 +147,7 @@ private struct CartoonCategoryIllustration: View {
         }
     }
 
-    private func stickerBase(side: CGFloat, fill: Color = .white) -> some View {
+    private func stickerBase(side: CGFloat, fill: Color = AppTheme.illustrationSurface) -> some View {
         Circle()
             .fill(fill.opacity(0.98))
             .overlay(
@@ -159,11 +159,11 @@ private struct CartoonCategoryIllustration: View {
 
     private func riceBowl(side: CGFloat) -> some View {
         ZStack {
-            stickerBase(side: side, fill: Color(hex: "FFFDF7"))
+            stickerBase(side: side, fill: AppTheme.illustrationSurface)
                 .frame(width: side * 0.88, height: side * 0.88)
 
             Ellipse()
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: side * 0.50, height: side * 0.28)
                 .offset(y: -side * 0.07)
                 .overlay(
@@ -174,7 +174,7 @@ private struct CartoonCategoryIllustration: View {
                 )
 
             RoundedRectangle(cornerRadius: side * 0.13, style: .continuous)
-                .fill(Color(hex: "FFE6A6"))
+                .fill(AppTheme.lemon)
                 .frame(width: side * 0.58, height: side * 0.32)
                 .offset(y: side * 0.12)
                 .overlay(
@@ -196,7 +196,7 @@ private struct CartoonCategoryIllustration: View {
     private func shoppingBag(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.18, style: .continuous)
-                .fill(Color(hex: "FFD6E4"))
+                .fill(AppTheme.primary)
                 .frame(width: side * 0.62, height: side * 0.62)
                 .offset(y: side * 0.10)
                 .overlay(
@@ -222,7 +222,7 @@ private struct CartoonCategoryIllustration: View {
 
             Image(systemName: "heart.fill")
                 .font(.system(size: side * 0.18, weight: .bold))
-                .foregroundStyle(Color.white.opacity(0.9))
+                .foregroundStyle(AppTheme.onAccentText.opacity(0.9))
                 .offset(y: side * 0.13)
         }
     }
@@ -230,7 +230,7 @@ private struct CartoonCategoryIllustration: View {
     private func toiletRoll(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.14, style: .continuous)
-                .fill(Color(hex: "EAF4FF"))
+                .fill(AppTheme.incomeSoftBackground)
                 .frame(width: side * 0.56, height: side * 0.68)
                 .overlay(
                     RoundedRectangle(cornerRadius: side * 0.14, style: .continuous)
@@ -238,18 +238,18 @@ private struct CartoonCategoryIllustration: View {
                 )
 
             Circle()
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: side * 0.35, height: side * 0.35)
                 .overlay(Circle().stroke(outline.opacity(0.85), lineWidth: side * 0.04))
                 .offset(y: -side * 0.09)
 
             Circle()
-                .fill(Color(hex: "BFE9FF"))
+                .fill(AppTheme.sky)
                 .frame(width: side * 0.13, height: side * 0.13)
                 .offset(y: -side * 0.09)
 
             RoundedRectangle(cornerRadius: side * 0.06, style: .continuous)
-                .fill(Color.white.opacity(0.78))
+                .fill(AppTheme.elevatedSurface.opacity(0.78))
                 .frame(width: side * 0.35, height: side * 0.16)
                 .offset(y: side * 0.22)
         }
@@ -258,7 +258,7 @@ private struct CartoonCategoryIllustration: View {
     private func miniBus(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.16, style: .continuous)
-                .fill(Color(hex: "BFE9FF"))
+                .fill(AppTheme.sky)
                 .frame(width: side * 0.70, height: side * 0.50)
                 .overlay(
                     RoundedRectangle(cornerRadius: side * 0.16, style: .continuous)
@@ -267,9 +267,9 @@ private struct CartoonCategoryIllustration: View {
 
             HStack(spacing: side * 0.06) {
                 RoundedRectangle(cornerRadius: side * 0.04)
-                    .fill(Color.white.opacity(0.90))
+                    .fill(AppTheme.onAccentText.opacity(0.90))
                 RoundedRectangle(cornerRadius: side * 0.04)
-                    .fill(Color.white.opacity(0.90))
+                    .fill(AppTheme.onAccentText.opacity(0.90))
             }
             .frame(width: side * 0.42, height: side * 0.16)
             .offset(y: -side * 0.06)
@@ -286,7 +286,7 @@ private struct CartoonCategoryIllustration: View {
     private func ticket(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.13, style: .continuous)
-                .fill(Color(hex: "FCEBFF"))
+                .fill(AppTheme.savingSoftBackground)
                 .frame(width: side * 0.70, height: side * 0.48)
                 .overlay(
                     RoundedRectangle(cornerRadius: side * 0.13, style: .continuous)
@@ -303,7 +303,7 @@ private struct CartoonCategoryIllustration: View {
     private func medicineKit(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.15, style: .continuous)
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: side * 0.66, height: side * 0.54)
                 .overlay(
                     RoundedRectangle(cornerRadius: side * 0.15, style: .continuous)
@@ -322,7 +322,7 @@ private struct CartoonCategoryIllustration: View {
     private func tinyHouse(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.10, style: .continuous)
-                .fill(Color(hex: "FFF4D6"))
+                .fill(AppTheme.expenseSoftBackground)
                 .frame(width: side * 0.58, height: side * 0.46)
                 .offset(y: side * 0.12)
                 .overlay(
@@ -349,7 +349,7 @@ private struct CartoonCategoryIllustration: View {
     private func moneyPouch(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.18, style: .continuous)
-                .fill(Color(hex: "EAF4FF"))
+                .fill(AppTheme.incomeSoftBackground)
                 .frame(width: side * 0.62, height: side * 0.54)
                 .offset(y: side * 0.10)
                 .overlay(
@@ -374,7 +374,7 @@ private struct CartoonCategoryIllustration: View {
     private func redEnvelope(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.12, style: .continuous)
-                .fill(Color(hex: "FF8FA3"))
+                .fill(AppTheme.primaryDeep)
                 .frame(width: side * 0.62, height: side * 0.68)
                 .overlay(
                     RoundedRectangle(cornerRadius: side * 0.12, style: .continuous)
@@ -382,7 +382,7 @@ private struct CartoonCategoryIllustration: View {
                 )
 
             Circle()
-                .fill(Color(hex: "FFE6A6"))
+                .fill(AppTheme.lemon)
                 .frame(width: side * 0.25, height: side * 0.25)
 
             Image(systemName: "heart.fill")
@@ -394,7 +394,7 @@ private struct CartoonCategoryIllustration: View {
     private func coinSprout(side: CGFloat) -> some View {
         ZStack {
             Circle()
-                .fill(Color(hex: "FFE6A6"))
+                .fill(AppTheme.lemon)
                 .frame(width: side * 0.58, height: side * 0.58)
                 .overlay(Circle().stroke(outline, lineWidth: side * 0.05))
                 .offset(y: side * 0.10)
@@ -413,7 +413,7 @@ private struct CartoonCategoryIllustration: View {
     private func beanJar(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.18, style: .continuous)
-                .fill(Color(hex: "FCEBFF"))
+                .fill(AppTheme.savingSoftBackground)
                 .frame(width: side * 0.56, height: side * 0.66)
                 .offset(y: side * 0.08)
                 .overlay(
@@ -424,7 +424,7 @@ private struct CartoonCategoryIllustration: View {
                 )
 
             Capsule()
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: side * 0.42, height: side * 0.16)
                 .overlay(Capsule().stroke(outline, lineWidth: side * 0.04))
                 .offset(y: -side * 0.30)
@@ -445,7 +445,7 @@ private struct CartoonCategoryIllustration: View {
     private func cuteCard(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.12, style: .continuous)
-                .fill(Color(hex: "F0EAFF"))
+                .fill(AppTheme.debtSoftBackground)
                 .frame(width: side * 0.70, height: side * 0.48)
                 .overlay(
                     RoundedRectangle(cornerRadius: side * 0.12, style: .continuous)
@@ -463,7 +463,7 @@ private struct CartoonCategoryIllustration: View {
     private func debtNote(side: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: side * 0.12, style: .continuous)
-                .fill(Color.white)
+                .fill(AppTheme.illustrationSurface)
                 .frame(width: side * 0.62, height: side * 0.68)
                 .overlay(
                     RoundedRectangle(cornerRadius: side * 0.12, style: .continuous)

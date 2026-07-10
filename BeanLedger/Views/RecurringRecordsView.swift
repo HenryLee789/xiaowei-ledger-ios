@@ -7,7 +7,7 @@ struct RecurringRecordsView: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: AppTheme.spacingLarge) {
@@ -47,7 +47,7 @@ struct RecurringRecordsView: View {
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppTheme.onAccentText)
                     .frame(width: 54, height: 54)
                     .background(AppTheme.buttonGradient, in: Circle())
             }
@@ -109,7 +109,7 @@ struct RecurringRecordsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
-        .background(Color.white.opacity(0.65), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.65), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -120,7 +120,7 @@ struct RecurringDueSheet: View {
     var body: some View {
         ZStack {
             DottedBackground()
-                .ignoresSafeArea()
+                .ignoresSafeArea(edges: [.top, .bottom])
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("到期账单")
@@ -227,7 +227,7 @@ private struct RecurringTemplateRow: View {
             }
         }
         .padding(13)
-        .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(AppTheme.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(AppTheme.border.opacity(0.8), lineWidth: 1)
@@ -238,7 +238,7 @@ private struct RecurringTemplateRow: View {
         Button(action: action) {
             Label(title, systemImage: symbol)
                 .font(.system(size: 12, weight: .heavy))
-                .foregroundStyle(color == AppTheme.cherry ? .white : color)
+                .foregroundStyle(color == AppTheme.cherry ? AppTheme.onAccentText : color)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
