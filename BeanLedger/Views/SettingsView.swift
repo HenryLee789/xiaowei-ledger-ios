@@ -3,7 +3,7 @@ import UIKit
 
 struct SettingsView: View {
     @ObservedObject var viewModel: LedgerViewModel
-    @StateObject private var aiSettingsStore = AISettingsStore()
+    @ObservedObject var aiSettingsStore: AISettingsStore
     @State private var isShowingClearConfirmation = false
     @State private var clearConfirmationText = ""
     @FocusState private var isClearConfirmationFocused: Bool
@@ -235,7 +235,11 @@ struct SettingsView: View {
         do {
             let url = try writeExportFile(format: format)
             let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-            topMostViewController()?.present(controller, animated: true)
+            guard let presenter = topMostViewController() else {
+                viewModel.showToast("无法打开系统分享面板，请稍后重试")
+                return
+            }
+            presenter.present(controller, animated: true)
         } catch {
             viewModel.showToast(error.localizedDescription)
         }
@@ -266,10 +270,16 @@ struct SettingsView: View {
     private func clearAllData() {
         do {
             try viewModel.clearAllData()
+        } catch {
+            viewModel.showToast(error.localizedDescription)
+            return
+        }
+
+        do {
             try aiSettingsStore.resetAllSettings()
             viewModel.showToast("已清空全部数据")
         } catch {
-            viewModel.showToast(error.localizedDescription)
+            viewModel.showToast("账本数据已清空，但 API Key 清除失败：\(error.localizedDescription)")
         }
     }
 }
@@ -277,7 +287,7 @@ struct SettingsView: View {
 #if DEBUG
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsView(viewModel: LedgerViewModel())
+        SettingsView(viewModel: LedgerViewModel(), aiSettingsStore: AISettingsStore())
     }
 }
 #endif

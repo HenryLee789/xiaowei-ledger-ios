@@ -38,7 +38,7 @@ enum LedgerType: String, CaseIterable, Codable, Identifiable {
     var categories: [String] {
         switch self {
         case .expense:
-            return ["餐饮", "交通", "购物", "生活缴费", "娱乐", "医疗", "房租", "其他出账"]
+            return ["餐饮", "交通", "购物", "燃气费", "电费", "生活缴费", "娱乐", "医疗", "房租", "其他出账"]
         case .income:
             return ["工资", "副业", "红包", "报销", "投资收益", "其他入账"]
         case .saving:

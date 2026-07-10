@@ -41,6 +41,12 @@ final class AIEntryViewModel: ObservableObject {
         errorMessage = nil
     }
 
+    func updateDraft(_ draft: AIParsedLedgerDraft, at index: Int) {
+        guard parsedDrafts.indices.contains(index) else { return }
+        parsedDrafts[index] = draft
+        errorMessage = nil
+    }
+
     func clearAfterSave() {
         inputText = ""
         parsedDrafts = []

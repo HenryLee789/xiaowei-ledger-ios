@@ -148,7 +148,7 @@ struct BudgetView: View {
 
     private func budgetText(_ amount: Double?) -> String {
         guard let amount, amount > 0 else { return "" }
-        return String(format: "%.0f", locale: Locale(identifier: "en_US_POSIX"), amount)
+        return CurrencyFormatter.inputString(from: amount)
     }
 
     private func sanitizedAmount(_ input: String) -> String {
@@ -244,7 +244,7 @@ private struct BudgetProgressView: View {
                         .fill(AppTheme.expenseSoftBackground)
                     Capsule()
                         .fill(tint)
-                        .frame(width: proxy.size.width * min(max(progress, budgetAmount > 0 ? 0.04 : 0), 1))
+                        .frame(width: proxy.size.width * min(max(progress, 0), 1))
                 }
             }
             .frame(height: compact ? 8 : 10)

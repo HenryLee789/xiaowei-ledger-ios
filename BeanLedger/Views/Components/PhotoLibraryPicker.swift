@@ -39,7 +39,7 @@ struct PhotoLibraryPicker: UIViewControllerRepresentable {
 
             provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
                 DispatchQueue.main.async {
-                    if let data, let image = UIImage(data: data) {
+                    if let data, let image = RecordImageStore.previewImage(data: data) {
                         self.parent.onImagePicked(data, image)
                     }
                     self.parent.dismiss()

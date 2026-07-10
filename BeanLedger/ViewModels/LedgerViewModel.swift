@@ -227,7 +227,7 @@ final class LedgerViewModel: ObservableObject {
         date: Date,
         imageData: Data? = nil
     ) throws -> LedgerRecord {
-        guard amount > 0 else {
+        guard amount.isFinite, amount > 0 else {
             throw LedgerInputError.invalidAmount
         }
 
@@ -274,7 +274,7 @@ final class LedgerViewModel: ObservableObject {
         imageData: Data? = nil
     ) throws -> LedgerRecord {
         let normalized = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let amount = Double(normalized), amount > 0 else {
+        guard let amount = Double(normalized), amount.isFinite, amount > 0 else {
             throw LedgerInputError.invalidAmount
         }
         return try addRecord(amount: amount, type: type, category: category, note: note, date: date, imageData: imageData)
@@ -293,6 +293,9 @@ final class LedgerViewModel: ObservableObject {
 
     @discardableResult
     func addRecords(from aiDrafts: [AIParsedLedgerDraft]) throws -> [LedgerRecord] {
+        guard aiDrafts.allSatisfy({ $0.amount.isFinite && $0.amount > 0 }) else {
+            throw LedgerInputError.invalidAmount
+        }
         let createdAt = Date()
         let recordsToAdd = aiDrafts.map { draft in
             LedgerRecord(
@@ -338,9 +341,16 @@ final class LedgerViewModel: ObservableObject {
     }
 
     func clearAllData() throws {
+        let recordSnapshot = store.records
+        let budgetSnapshot = budgetStore.budgets
+        var didClearRecords = false
+        var didClearBudgets = false
+
         do {
             try store.clear()
+            didClearRecords = true
             try budgetStore.clear()
+            didClearBudgets = true
             try recurringStore.clear()
             RecordImageStore.clearAllImages()
             syncFromStore()
@@ -348,7 +358,31 @@ final class LedgerViewModel: ObservableObject {
             syncRecurringTemplates()
             checkDueRecurringTemplates()
         } catch {
-            throw LedgerInputError.persistenceFailed(error.localizedDescription)
+            let originalMessage = error.localizedDescription
+            var rollbackFailures: [String] = []
+
+            if didClearBudgets {
+                do {
+                    try budgetStore.restore(budgetSnapshot)
+                } catch {
+                    rollbackFailures.append("预算回滚失败：\(error.localizedDescription)")
+                }
+            }
+            if didClearRecords {
+                do {
+                    try store.restore(recordSnapshot)
+                } catch {
+                    rollbackFailures.append("账本回滚失败：\(error.localizedDescription)")
+                }
+            }
+
+            syncFromStore()
+            syncBudgets()
+            syncRecurringTemplates()
+            checkDueRecurringTemplates()
+
+            let rollbackSuffix = rollbackFailures.isEmpty ? "" : "；\(rollbackFailures.joined(separator: "；"))"
+            throw LedgerInputError.persistenceFailed(originalMessage + rollbackSuffix)
         }
     }
 
@@ -425,13 +459,29 @@ final class LedgerViewModel: ObservableObject {
         return Array((sameCategory + others).prefix(5))
     }
 
-    func dailyTotals(type: LedgerType, inMonth monthDate: Date = Date()) -> [(date: Date, total: Double)] {
+    func dailyTotals(
+        type: LedgerType,
+        inMonth monthDate: Date = Date(),
+        through cutoffDate: Date = Date()
+    ) -> [(date: Date, total: Double)] {
         guard let range = calendar.range(of: .day, in: .month, for: monthDate),
-              let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) else {
+              let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)),
+              let nextMonthStart = calendar.date(byAdding: .month, value: 1, to: monthStart) else {
             return []
         }
 
-        return range.compactMap { day -> (date: Date, total: Double)? in
+        let includedDayCount: Int
+        if cutoffDate < monthStart {
+            includedDayCount = 0
+        } else if cutoffDate >= nextMonthStart {
+            includedDayCount = range.count
+        } else {
+            let cutoffDay = calendar.startOfDay(for: cutoffDate)
+            let elapsedDays = calendar.dateComponents([.day], from: monthStart, to: cutoffDay).day ?? 0
+            includedDayCount = min(max(elapsedDays + 1, 0), range.count)
+        }
+
+        return range.prefix(includedDayCount).compactMap { day -> (date: Date, total: Double)? in
             guard let date = calendar.date(byAdding: .day, value: day - 1, to: monthStart) else { return nil }
             let total = records
                 .filter { $0.type == type && calendar.isDate($0.date, inSameDayAs: date) }
@@ -441,18 +491,48 @@ final class LedgerViewModel: ObservableObject {
         }
     }
 
-    func highestDailyExpense(inMonth monthDate: Date = Date()) -> Double {
-        dailyTotals(type: .expense, inMonth: monthDate).map(\.total).max() ?? 0
+    func highestDailyTotal(
+        type: LedgerType,
+        inMonth monthDate: Date = Date(),
+        through cutoffDate: Date = Date()
+    ) -> Double {
+        dailyTotals(type: type, inMonth: monthDate, through: cutoffDate).map(\.total).max() ?? 0
     }
 
-    func averageDailyExpense(inMonth monthDate: Date = Date()) -> Double {
-        let totals = dailyTotals(type: .expense, inMonth: monthDate).map(\.total)
+    func averageDailyTotal(
+        type: LedgerType,
+        inMonth monthDate: Date = Date(),
+        through cutoffDate: Date = Date()
+    ) -> Double {
+        let totals = dailyTotals(type: type, inMonth: monthDate, through: cutoffDate).map(\.total)
         guard !totals.isEmpty else { return 0 }
         return totals.reduce(0, +) / Double(totals.count)
     }
 
-    func recordedDayCount(inMonth monthDate: Date = Date()) -> Int {
-        Set(records.filter { isSameMonth($0.date, monthDate) }.map { calendar.startOfDay(for: $0.date) }).count
+    func highestDailyExpense(inMonth monthDate: Date = Date()) -> Double {
+        highestDailyTotal(type: .expense, inMonth: monthDate)
+    }
+
+    func averageDailyExpense(inMonth monthDate: Date = Date()) -> Double {
+        averageDailyTotal(type: .expense, inMonth: monthDate)
+    }
+
+    func recordedDayCount(
+        type: LedgerType? = nil,
+        inMonth monthDate: Date = Date(),
+        through cutoffDate: Date = Date()
+    ) -> Int {
+        let includedDays = Set(
+            dailyTotals(type: type ?? .expense, inMonth: monthDate, through: cutoffDate)
+                .map { calendar.startOfDay(for: $0.date) }
+        )
+        return Set(
+            records
+                .filter { record in
+                    (type == nil || record.type == type) && includedDays.contains(calendar.startOfDay(for: record.date))
+                }
+                .map { calendar.startOfDay(for: $0.date) }
+        ).count
     }
 
     func monthKey(for date: Date = Date()) -> String {
@@ -467,7 +547,7 @@ final class LedgerViewModel: ObservableObject {
 
     func setBudget(category: String?, amountText: String, monthDate: Date = Date()) throws {
         let normalized = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let amount = Double(normalized), amount >= 0 else {
+        guard let amount = Double(normalized), amount.isFinite, amount >= 0 else {
             throw LedgerInputError.invalidAmount
         }
 
@@ -496,6 +576,12 @@ final class LedgerViewModel: ObservableObject {
         let minimumAmount = Double(filter.minimumAmountText.trimmingCharacters(in: .whitespacesAndNewlines))
         let maximumAmount = Double(filter.maximumAmountText.trimmingCharacters(in: .whitespacesAndNewlines))
         let keyword = filter.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let startDate = calendar.startOfDay(for: filter.startDate)
+        let endDateExclusive = calendar.date(
+            byAdding: .day,
+            value: 1,
+            to: calendar.startOfDay(for: filter.endDate)
+        ) ?? filter.endDate
 
         let filtered = records.filter { record in
             let matchesSearch = keyword.isEmpty ||
@@ -510,9 +596,8 @@ final class LedgerViewModel: ObservableObject {
             let matchesCategory = filter.selectedCategory == nil || record.category == filter.selectedCategory
             let matchesMinimum = minimumAmount == nil || record.amount >= (minimumAmount ?? 0)
             let matchesMaximum = maximumAmount == nil || record.amount <= (maximumAmount ?? Double.greatestFiniteMagnitude)
-            let matchesStart = !filter.useStartDate || record.date >= calendar.startOfDay(for: filter.startDate)
-            let endDate = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: filter.endDate) ?? filter.endDate
-            let matchesEnd = !filter.useEndDate || record.date <= endDate
+            let matchesStart = !filter.useStartDate || record.date >= startDate
+            let matchesEnd = !filter.useEndDate || record.date < endDateExclusive
             return matchesSearch && matchesMonth && matchesType && matchesCategory && matchesMinimum && matchesMaximum && matchesStart && matchesEnd
         }
 
@@ -553,7 +638,7 @@ final class LedgerViewModel: ObservableObject {
         isEnabled: Bool
     ) throws {
         let normalized = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let amount = Double(normalized), amount > 0 else {
+        guard let amount = Double(normalized), amount.isFinite, amount > 0 else {
             throw LedgerInputError.invalidAmount
         }
         let cleanedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -586,23 +671,35 @@ final class LedgerViewModel: ObservableObject {
     }
 
     func generateRecurringRecord(_ template: RecurringRecordTemplate) throws {
-        _ = try addRecord(
+        let generatedRecord = try addRecord(
             amount: template.amount,
             type: template.type,
             category: template.category,
             note: template.note.isEmpty ? template.title : template.note,
             date: min(template.nextDueDate, Date())
         )
-        try advanceRecurringTemplate(template)
+        do {
+            try advanceRecurringTemplate(template)
+        } catch {
+            let advanceError = error
+            do {
+                try delete(generatedRecord)
+            } catch {
+                throw LedgerInputError.persistenceFailed(
+                    "周期模板推进失败：\(advanceError.localizedDescription)；新记录回滚失败：\(error.localizedDescription)"
+                )
+            }
+            throw advanceError
+        }
     }
 
     func skipRecurringTemplate(_ template: RecurringRecordTemplate) throws {
         try advanceRecurringTemplate(template)
     }
 
-    func disableRecurringTemplate(_ template: RecurringRecordTemplate) throws {
+    func setRecurringTemplateEnabled(_ template: RecurringRecordTemplate, isEnabled: Bool) throws {
         var updated = template
-        updated.isEnabled = false
+        updated.isEnabled = isEnabled
         do {
             try recurringStore.update(updated)
             syncRecurringTemplates()

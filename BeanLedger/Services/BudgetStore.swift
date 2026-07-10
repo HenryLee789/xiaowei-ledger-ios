@@ -80,6 +80,17 @@ final class BudgetStore: ObservableObject {
         }
     }
 
+    func restore(_ snapshot: [Budget]) throws {
+        let previousBudgets = budgets
+        budgets = snapshot
+        do {
+            try persist(allowReplacingCorruptFile: true)
+        } catch {
+            budgets = previousBudgets
+            throw error
+        }
+    }
+
     private func persist(allowReplacingCorruptFile: Bool = false) throws {
         guard let fileURL else { return }
         if let loadFailureMessage, !allowReplacingCorruptFile {

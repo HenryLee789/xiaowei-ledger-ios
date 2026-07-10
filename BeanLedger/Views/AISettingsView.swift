@@ -38,6 +38,11 @@ struct AISettingsView: View {
                 settingsStore.settings.useFallbackWhenPrimaryFails = false
             }
         }
+        .onChange(of: settingsStore.apiKey) { newValue in
+            if apiKeyDraft != newValue {
+                apiKeyDraft = newValue
+            }
+        }
     }
 
     private var header: some View {

@@ -311,7 +311,7 @@ private struct ProgressStatRow: View {
                         .fill(softTint)
                     Capsule()
                         .fill(progressTint)
-                        .frame(width: proxy.size.width * min(max(progress, 0.05), 1))
+                        .frame(width: proxy.size.width * min(max(progress, 0), 1))
                 }
             }
             .frame(height: 9)

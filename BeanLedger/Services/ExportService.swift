@@ -47,8 +47,8 @@ enum ExportService {
                 decimalString(record.signedAmount),
                 record.type.rawValue,
                 record.type.displayName,
-                record.category,
-                record.note,
+                spreadsheetSafeText(record.category),
+                spreadsheetSafeText(record.note),
                 isoFormatter.string(from: record.date),
                 isoFormatter.string(from: record.createdAt)
             ]
@@ -77,6 +77,14 @@ enum ExportService {
         let needsEscaping = value.contains(",") || value.contains("\"") || value.contains("\n")
         let escaped = value.replacingOccurrences(of: "\"", with: "\"\"")
         return needsEscaping ? "\"\(escaped)\"" : escaped
+    }
+
+    private static func spreadsheetSafeText(_ value: String) -> String {
+        guard let firstContent = value.first(where: { !$0.isWhitespace }),
+              ["=", "+", "-", "@"].contains(firstContent) else {
+            return value
+        }
+        return "'" + value
     }
 
     private static let isoFormatter: ISO8601DateFormatter = {

@@ -2,13 +2,14 @@ import SwiftUI
 
 struct AppRootView: View {
     @StateObject private var viewModel = LedgerViewModel()
+    @StateObject private var aiSettingsStore = AISettingsStore()
     @Environment(\.scenePhase) private var scenePhase
     @State private var isShowingRecurringDue = false
 
     var body: some View {
         TabView {
             NavigationStack {
-                HomeView(viewModel: viewModel)
+                HomeView(viewModel: viewModel, aiSettingsStore: aiSettingsStore)
             }
             .tabItem {
                 Label("首页", systemImage: "house.fill")
@@ -29,7 +30,7 @@ struct AppRootView: View {
             }
 
             NavigationStack {
-                SettingsView(viewModel: viewModel)
+                SettingsView(viewModel: viewModel, aiSettingsStore: aiSettingsStore)
             }
             .tabItem {
                 Label("设置", systemImage: "gearshape.fill")
@@ -40,13 +41,18 @@ struct AppRootView: View {
             if let message = viewModel.toastMessage {
                 ToastView(message: message)
                     .padding(.top, 12)
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                viewModel.dismissToast()
-                            }
-                        }
-                    }
+            }
+        }
+        .task(id: viewModel.toastMessage) {
+            guard let currentMessage = viewModel.toastMessage else { return }
+            do {
+                try await Task.sleep(nanoseconds: 1_400_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled, viewModel.toastMessage == currentMessage else { return }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                viewModel.dismissToast()
             }
         }
         .sheet(isPresented: $viewModel.isPresentingAddRecord) {

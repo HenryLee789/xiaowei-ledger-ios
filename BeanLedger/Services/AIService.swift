@@ -224,7 +224,7 @@ private extension AIService {
       "questions": []
     }
 
-    如果用户一句话里包含多笔互相独立的账，例如“发了工资，又买了外卖”，必须在 records 里按发生顺序返回多条记录；不要合并金额，不要丢弃其中任何一笔，也不要限制 records 数量。type 只能是 expense、income、saving、debt。amount 必须是正数；无法识别时设为 null。category 只能映射到现有类目：出账：餐饮、交通、购物、生活缴费、娱乐、医疗、房租、其他出账；入账：工资、副业、红包、报销、投资收益、其他入账；攒豆豆：存钱、目标储蓄、备用金、理财转入、其他攒豆豆；借贷：借出、借入、还款、收回借款、信用卡、花呗 / 白条、其他借贷。每条记录和顶层 needsConfirmation 都固定 true。
+    如果用户一句话里包含多笔互相独立的账，例如“发了工资，又买了外卖”，必须在 records 里按发生顺序返回多条记录；不要合并金额，不要丢弃其中任何一笔，也不要限制 records 数量。type 只能是 expense、income、saving、debt。amount 必须是正数；无法识别时设为 null。category 只能映射到现有类目：出账：餐饮、交通、购物、燃气费、电费、生活缴费、娱乐、医疗、房租、其他出账；入账：工资、副业、红包、报销、投资收益、其他入账；攒豆豆：存钱、目标储蓄、备用金、理财转入、其他攒豆豆；借贷：借出、借入、还款、收回借款、信用卡、花呗 / 白条、其他借贷。每条记录和顶层 needsConfirmation 都固定 true。
     """
 
     static func mockParseResults(for input: String) -> [AIParseResult] {
@@ -336,6 +336,12 @@ private extension AIService {
         }
         if input.contains("地铁") || input.contains("公交") || input.contains("打车") {
             return (.expense, "交通")
+        }
+        if input.contains("燃气") || input.contains("天然气") {
+            return (.expense, "燃气费")
+        }
+        if input.contains("电费") {
+            return (.expense, "电费")
         }
         if input.contains("药") || input.contains("医院") {
             return (.expense, "医疗")

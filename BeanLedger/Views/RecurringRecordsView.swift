@@ -203,10 +203,14 @@ private struct RecurringTemplateRow: View {
                 }
             } else {
                 HStack(spacing: 10) {
-                    smallAction(template.isEnabled ? "关闭模板" : "已关闭", "pause.circle.fill", AppTheme.secondaryText) {
+                    smallAction(
+                        template.isEnabled ? "关闭模板" : "启用模板",
+                        template.isEnabled ? "pause.circle.fill" : "play.circle.fill",
+                        template.isEnabled ? AppTheme.secondaryText : AppTheme.incomePrimary
+                    ) {
                         do {
-                            try viewModel.disableRecurringTemplate(template)
-                            viewModel.showToast("模板已关闭")
+                            try viewModel.setRecurringTemplateEnabled(template, isEnabled: !template.isEnabled)
+                            viewModel.showToast(template.isEnabled ? "模板已关闭" : "模板已启用")
                         } catch {
                             viewModel.showToast(error.localizedDescription)
                         }
@@ -253,4 +257,3 @@ struct RecurringRecordsView_Previews: PreviewProvider {
     }
 }
 #endif
-

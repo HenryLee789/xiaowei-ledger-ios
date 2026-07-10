@@ -120,6 +120,17 @@ final class LedgerStore: ObservableObject {
         }
     }
 
+    func restore(_ snapshot: [LedgerRecord]) throws {
+        let previousRecords = records
+        records = snapshot
+        do {
+            try persist(allowReplacingCorruptFile: true)
+        } catch {
+            records = previousRecords
+            throw error
+        }
+    }
+
     func reload() {
         switch Self.loadRecords(from: fileURL, decoder: decoder) {
         case .loaded(let loadedRecords):

@@ -120,7 +120,7 @@ private struct CartoonCategoryIllustration: View {
             riceBowl(side: side)
         case "购物":
             shoppingBag(side: side)
-        case "生活缴费":
+        case "燃气费", "电费", "生活缴费":
             toiletRoll(side: side)
         case "交通":
             miniBus(side: side)

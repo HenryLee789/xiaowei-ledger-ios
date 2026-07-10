@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject var viewModel: LedgerViewModel
+    @ObservedObject var aiSettingsStore: AISettingsStore
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -84,7 +85,7 @@ struct HomeView: View {
 
     private var aiEntryCard: some View {
         NavigationLink {
-            AIEntryView(ledgerViewModel: viewModel)
+            AIEntryView(ledgerViewModel: viewModel, settingsStore: aiSettingsStore)
         } label: {
             CuteCardView {
                 HStack(spacing: 14) {
@@ -308,7 +309,7 @@ struct DeletableRecordRow: View {
 #if DEBUG
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
-        HomeView(viewModel: LedgerViewModel())
+        HomeView(viewModel: LedgerViewModel(), aiSettingsStore: AISettingsStore())
     }
 }
 #endif

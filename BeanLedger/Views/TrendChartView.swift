@@ -47,9 +47,21 @@ struct TrendChartView: View {
                         .padding(.top, 4)
 
                     HStack(spacing: 10) {
-                        trendMetric(title: "最高单日出账", value: CurrencyFormatter.string(from: viewModel.highestDailyExpense()), color: AppTheme.expenseAmountColor)
-                        trendMetric(title: "平均每日出账", value: CurrencyFormatter.string(from: viewModel.averageDailyExpense()), color: AppTheme.expenseAmountColor)
-                        trendMetric(title: "记账天数", value: "\(viewModel.recordedDayCount()) 天", color: AppTheme.cherry)
+                        trendMetric(
+                            title: "最高单日\(selectedType.displayName)",
+                            value: CurrencyFormatter.string(from: viewModel.highestDailyTotal(type: selectedType)),
+                            color: AppTheme.amountColor(for: selectedType)
+                        )
+                        trendMetric(
+                            title: "平均每日\(selectedType.displayName)",
+                            value: CurrencyFormatter.string(from: viewModel.averageDailyTotal(type: selectedType)),
+                            color: AppTheme.amountColor(for: selectedType)
+                        )
+                        trendMetric(
+                            title: "记账天数",
+                            value: "\(viewModel.recordedDayCount(type: selectedType)) 天",
+                            color: AppTheme.cherry
+                        )
                     }
                 } else {
                     VStack(spacing: 10) {

@@ -135,14 +135,16 @@ final class AISettingsStore: ObservableObject {
         }
 
         self.settings = loadedSettings
-        self.apiKey = (try? apiKeyStorage.readAPIKey()) ?? ""
+        self.apiKey = ((try? apiKeyStorage.readAPIKey()) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     func saveAPIKey(_ newValue: String) {
-        apiKey = newValue
+        let sanitizedValue = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
-            try apiKeyStorage.saveAPIKey(newValue)
-            settingsMessage = newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "已清空 API Key" : "API Key 已保存到本机"
+            try apiKeyStorage.saveAPIKey(sanitizedValue)
+            apiKey = sanitizedValue
+            settingsMessage = sanitizedValue.isEmpty ? "已清空 API Key" : "API Key 已保存到本机"
         } catch {
             settingsMessage = error.localizedDescription
         }
@@ -177,11 +179,22 @@ final class AISettingsStore: ObservableObject {
     }
 
     func resetAllSettings() throws {
-        try apiKeyStorage.deleteAPIKey()
-        apiKey = ""
+        var keyDeletionError: Error?
+        do {
+            try apiKeyStorage.deleteAPIKey()
+            apiKey = ""
+        } catch {
+            keyDeletionError = error
+        }
+
         availableModels = []
         modelListMessage = nil
         settings = AISettings()
+
+        if let keyDeletionError {
+            settingsMessage = "AI 设置已清空，但 API Key 清除失败"
+            throw keyDeletionError
+        }
         settingsMessage = "AI 设置和 API Key 已清空"
     }
 

@@ -85,6 +85,17 @@ final class RecurringStore: ObservableObject {
         }
     }
 
+    func restore(_ snapshot: [RecurringRecordTemplate]) throws {
+        let previousTemplates = templates
+        templates = snapshot
+        do {
+            try persist(allowReplacingCorruptFile: true)
+        } catch {
+            templates = previousTemplates
+            throw error
+        }
+    }
+
     private func persist(allowReplacingCorruptFile: Bool = false) throws {
         guard let fileURL else { return }
         if let loadFailureMessage, !allowReplacingCorruptFile {

@@ -161,7 +161,7 @@ enum AIParseResultValidator {
         now: Date = Date(),
         calendar: Calendar = .current
     ) throws -> AIParsedLedgerDraft {
-        guard let amount = result.amount, amount > 0 else {
+        guard let amount = result.amount, amount.isFinite, amount > 0 else {
             throw AIParseValidationError.missingAmount
         }
         guard let type = result.type else {
@@ -210,45 +210,75 @@ enum AIResponseJSONExtractor {
             .replacingOccurrences(of: "```JSON", with: "```")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
+        let candidateSource: String
         if cleaned.hasPrefix("```"),
            let firstNewline = cleaned.firstIndex(of: "\n"),
            let closingRange = cleaned.range(of: "```", options: .backwards),
            closingRange.lowerBound > firstNewline {
-            return String(cleaned[firstNewline..<closingRange.lowerBound])
+            candidateSource = String(cleaned[firstNewline..<closingRange.lowerBound])
                 .trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            candidateSource = cleaned
         }
 
-        let objectStart = cleaned.firstIndex(of: "{")
-        let arrayStart = cleaned.firstIndex(of: "[")
-        let start: String.Index?
-        let closingCharacter: Character
-
-        switch (objectStart, arrayStart) {
-        case let (object?, array?):
-            if object < array {
-                start = object
-                closingCharacter = "}"
-            } else {
-                start = array
-                closingCharacter = "]"
+        var index = candidateSource.startIndex
+        while index < candidateSource.endIndex {
+            let character = candidateSource[index]
+            if (character == "{" || character == "["),
+               let candidate = balancedCandidate(in: candidateSource, from: index),
+               isValidJSON(candidate) {
+                return candidate
             }
-        case let (object?, nil):
-            start = object
-            closingCharacter = "}"
-        case let (nil, array?):
-            start = array
-            closingCharacter = "]"
-        case (nil, nil):
-            start = nil
-            closingCharacter = "}"
+            index = candidateSource.index(after: index)
         }
 
-        guard let start,
-              let end = cleaned.lastIndex(of: closingCharacter),
-              start <= end else {
-            throw ExtractionError.missingJSONObject
+        throw ExtractionError.missingJSONObject
+    }
+
+    private static func balancedCandidate(in source: String, from start: String.Index) -> String? {
+        var stack: [Character] = []
+        var isInsideString = false
+        var isEscaped = false
+        var index = start
+
+        while index < source.endIndex {
+            let character = source[index]
+            if isInsideString {
+                if isEscaped {
+                    isEscaped = false
+                } else if character == "\\" {
+                    isEscaped = true
+                } else if character == "\"" {
+                    isInsideString = false
+                }
+            } else {
+                switch character {
+                case "\"":
+                    isInsideString = true
+                case "{", "[":
+                    stack.append(character)
+                case "}":
+                    guard stack.last == "{" else { return nil }
+                    stack.removeLast()
+                case "]":
+                    guard stack.last == "[" else { return nil }
+                    stack.removeLast()
+                default:
+                    break
+                }
+
+                if stack.isEmpty {
+                    return String(source[start...index])
+                }
+            }
+            index = source.index(after: index)
         }
-        return String(cleaned[start...end])
+        return nil
+    }
+
+    private static func isValidJSON(_ candidate: String) -> Bool {
+        guard let data = candidate.data(using: .utf8) else { return false }
+        return (try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])) != nil
     }
 }
 

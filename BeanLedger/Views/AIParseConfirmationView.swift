@@ -3,7 +3,7 @@ import SwiftUI
 struct AIParseConfirmationView: View {
     let drafts: [AIParsedLedgerDraft]
     let onSave: () -> Void
-    let onEdit: (AIParsedLedgerDraft) -> Void
+    let onEdit: (Int, AIParsedLedgerDraft) -> Void
     let onCancel: () -> Void
 
     var body: some View {
@@ -69,7 +69,7 @@ struct AIParseConfirmationView: View {
                     .background(AppTheme.softBackground(for: draft.type), in: Capsule())
                 Spacer(minLength: 8)
                 Button {
-                    onEdit(draft)
+                    onEdit(index, draft)
                 } label: {
                     Label("调整", systemImage: "slider.horizontal.3")
                         .font(.system(size: 12, weight: .heavy))

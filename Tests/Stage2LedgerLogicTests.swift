@@ -8,21 +8,34 @@ struct Stage2LedgerLogicTests {
         try testStorePersistsAddDeleteAndClear()
         try testCorruptLedgerStoreBlocksOverwrite()
         try testViewModelAddsRecordsAndCalculatesTotals()
+        try testMonthToDateTrendMetricsRespectTypeAndCurrentDay()
+        try testFilterEndDateIncludesTheEntireDay()
         try testDisplayAmountSigns()
+        try testCSVExportNeutralizesSpreadsheetFormulas()
+        try testEditableAmountFormattingPreservesCents()
         try testAIResponseJSONExtractorHandlesMarkdown()
+        try testAIResponseJSONExtractorSkipsNonJSONBracketsAndTrailingText()
         try testAIParsePayloadDecodesMultipleRecords()
         try testAIParsePayloadKeepsLongRecordLists()
         try testAIEntryExamplesUseCommonPrompts()
         try testAISettingsRequireUserProvidedEndpoint()
+        try testAISettingsStoreKeepsLastSavedAPIKeyOnFailure()
+        try testAISettingsResetClearsOrdinarySettingsWhenKeyDeletionFails()
         try testAIParseResultValidationFallsBackAndTruncates()
         try testAIParseResultValidationRequiresAmountAndType()
         try testAIParseResultValidationBuildsMultipleDrafts()
+        try testAIEntryViewModelUpdatesOneDraftInPlace()
         try testNaturalLanguageDateParserHandlesRelativeAndSpecificDates()
+        try testQuickEntryUtilityCategoriesAreValidExpenses()
+        try testNonFiniteAmountsAreRejected()
         try testViewModelAddsConfirmedAIRecord()
         try testViewModelAddsConfirmedAIRecords()
         try testViewModelAddsManyConfirmedAIRecords()
         try testClearAllDataClearsAdjacentStores()
+        try testClearAllDataRollsBackEarlierStoresWhenLaterStoreFails()
         try testRecurringRecordAdvancesOnePeriodAtATime()
+        try testRecurringGenerationRollsBackRecordWhenTemplateAdvanceFails()
+        try testRecurringTemplateCanBeReenabled()
         try testClearAllDataConfirmationRequiresExactText()
         print("Stage2LedgerLogicTests passed")
     }
@@ -128,6 +141,65 @@ struct Stage2LedgerLogicTests {
     }
 
     @MainActor
+    private static func testMonthToDateTrendMetricsRespectTypeAndCurrentDay() throws {
+        let records = [
+            LedgerRecord(amount: 31, type: .expense, category: "餐饮", note: "月初", date: fixedDate(day: 1, hour: 9)),
+            LedgerRecord(amount: 69, type: .expense, category: "交通", note: "今天", date: fixedDate(day: 10, hour: 9)),
+            LedgerRecord(amount: 1000, type: .expense, category: "购物", note: "未来", date: fixedDate(day: 20, hour: 9)),
+            LedgerRecord(amount: 500, type: .income, category: "副业", note: "入账", date: fixedDate(day: 10, hour: 10))
+        ]
+        let viewModel = LedgerViewModel(records: records, calendar: calendar)
+        let reportDate = fixedDate(day: 10, hour: 12)
+
+        let expenseTotals = viewModel.dailyTotals(type: .expense, inMonth: reportDate, through: reportDate)
+        assertEqual(expenseTotals.count, 10, "current-month trend should stop at the current day")
+        assertEqual(expenseTotals.map(\.total).reduce(0, +), 100, "future records should not enter month-to-date totals")
+        assertEqual(
+            viewModel.highestDailyTotal(type: .expense, inMonth: reportDate, through: reportDate),
+            69,
+            "highest daily metric should follow the requested type"
+        )
+        assertEqual(
+            viewModel.averageDailyTotal(type: .expense, inMonth: reportDate, through: reportDate),
+            10,
+            "daily average should divide by elapsed days instead of the full month"
+        )
+        assertEqual(
+            viewModel.recordedDayCount(type: .expense, inMonth: reportDate, through: reportDate),
+            2,
+            "recorded-day count should only include the selected type"
+        )
+        assertEqual(
+            viewModel.recordedDayCount(type: .income, inMonth: reportDate, through: reportDate),
+            1,
+            "income trend should use income recording days"
+        )
+    }
+
+    @MainActor
+    private static func testFilterEndDateIncludesTheEntireDay() throws {
+        let finalFractionalSecond = fixedDate(day: 8, hour: 0).addingTimeInterval(-0.1)
+        let record = LedgerRecord(
+            amount: 18,
+            type: .expense,
+            category: "餐饮",
+            note: "深夜账单",
+            date: finalFractionalSecond
+        )
+        let viewModel = LedgerViewModel(records: [record], calendar: calendar)
+        var filter = RecordFilterState()
+        filter.selectedMonth = fixedDate(day: 7, hour: 12)
+        filter.useEndDate = true
+        filter.endDate = fixedDate(day: 7, hour: 12)
+
+        assertEqual(
+            viewModel.filteredRecords(using: filter).count,
+            1,
+            "end-date filters should include records throughout the final fractional second of the day"
+        )
+    }
+
+    @MainActor
     private static func testDisplayAmountSigns() throws {
         let viewModel = LedgerViewModel(records: [], calendar: calendar)
         let date = fixedDate(day: 5, hour: 8)
@@ -164,6 +236,31 @@ struct Stage2LedgerLogicTests {
         )
     }
 
+    private static func testCSVExportNeutralizesSpreadsheetFormulas() throws {
+        let record = LedgerRecord(
+            amount: 28,
+            type: .expense,
+            category: "@危险类目",
+            note: "=2+2",
+            date: fixedDate(day: 7, hour: 12)
+        )
+
+        let payload = try ExportService.makeExport(records: [record], format: .csv)
+        guard let csv = String(data: payload.data, encoding: .utf8) else {
+            throw TestFailure("expected UTF-8 CSV export")
+        }
+
+        assertEqual(csv.contains(",'@危险类目,'=2+2,"), true, "CSV export should neutralize formula-like text cells")
+        assertEqual(csv.contains(",28.00,-28.00,"), true, "CSV export should keep numeric amount cells numeric")
+        assertEqual(csv.contains(",@危险类目,=2+2,"), false, "CSV export should not expose executable formula-like cells")
+    }
+
+    private static func testEditableAmountFormattingPreservesCents() throws {
+        assertEqual(CurrencyFormatter.inputString(from: 2700), "2700", "whole input amounts should omit decimal zeros")
+        assertEqual(CurrencyFormatter.inputString(from: 100.5), "100.5", "editable amounts should preserve one decimal place")
+        assertEqual(CurrencyFormatter.inputString(from: 100.25), "100.25", "editable amounts should preserve cents")
+    }
+
     private static func testAIResponseJSONExtractorHandlesMarkdown() throws {
         let content = """
         ```json
@@ -187,6 +284,29 @@ struct Stage2LedgerLogicTests {
         assertEqual(result.type, .expense, "extractor should decode ledger type from JSON")
         assertEqual(result.category, "餐饮", "extractor should preserve category")
         assertEqual(result.needsConfirmation, true, "extractor should preserve confirmation flag")
+    }
+
+    private static func testAIResponseJSONExtractorSkipsNonJSONBracketsAndTrailingText() throws {
+        let content = """
+        解析结果 [仅供确认]：
+        {
+          "amount": 28,
+          "type": "expense",
+          "category": "餐饮",
+          "note": "字符串里有 } 也不能提前结束",
+          "dateText": "今天中午",
+          "confidence": 0.92,
+          "needsConfirmation": true,
+          "questions": []
+        }
+        后续说明 }
+        """
+
+        let data = try AIResponseJSONExtractor.extractJSONData(from: content)
+        let result = try JSONDecoder().decode(AIParseResult.self, from: data)
+
+        assertEqual(result.amount, 28, "extractor should skip earlier non-JSON bracket text")
+        assertEqual(result.note, "字符串里有 } 也不能提前结束", "extractor should respect braces inside JSON strings")
     }
 
     private static func testAIParsePayloadDecodesMultipleRecords() throws {
@@ -277,6 +397,61 @@ struct Stage2LedgerLogicTests {
         assertEqual(settings.fallbackBaseURL, "", "AI settings should not ship with a private fallback URL")
         assertEqual(settings.useFallbackWhenPrimaryFails, false, "fallback retry should be opt-in when no fallback URL is configured")
         assertEqual(settings.hasConfiguredBaseURL, false, "default AI settings should require user configuration before network calls")
+    }
+
+    @MainActor
+    private static func testAISettingsStoreKeepsLastSavedAPIKeyOnFailure() throws {
+        let suiteName = "BeanLedgerAISettingsTests-\(UUID().uuidString)"
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            throw TestFailure("expected isolated user defaults")
+        }
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+
+        let keyStorage = TestAIAPIKeyStorage(value: "old-key")
+        let store = AISettingsStore(userDefaults: userDefaults, apiKeyStorage: keyStorage)
+        assertEqual(store.apiKey, "old-key", "settings store should load the last saved API key")
+
+        keyStorage.shouldFailSave = true
+        store.saveAPIKey("  new-key\n")
+        assertEqual(store.apiKey, "old-key", "failed Keychain writes should not replace the in-memory saved key")
+        assertEqual(keyStorage.value, "old-key", "failed Keychain writes should preserve the persisted key")
+
+        keyStorage.shouldFailSave = false
+        store.saveAPIKey("  new-key\n")
+        assertEqual(store.apiKey, "new-key", "successful Keychain writes should trim pasted whitespace")
+        assertEqual(keyStorage.value, "new-key", "trimmed API key should be persisted")
+    }
+
+    @MainActor
+    private static func testAISettingsResetClearsOrdinarySettingsWhenKeyDeletionFails() throws {
+        let suiteName = "BeanLedgerAISettingsResetTests-\(UUID().uuidString)"
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            throw TestFailure("expected isolated user defaults")
+        }
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+
+        let keyStorage = TestAIAPIKeyStorage(value: "old-key")
+        let store = AISettingsStore(userDefaults: userDefaults, apiKeyStorage: keyStorage)
+        store.settings = AISettings(
+            apiBaseURL: "https://example.com/v1",
+            fallbackBaseURL: "https://backup.example.com/v1",
+            selectedModel: "test-model",
+            useFallbackWhenPrimaryFails: true,
+            enableMockParsing: true
+        )
+        store.modelListMessage = "stale model message"
+        keyStorage.shouldFailDelete = true
+
+        do {
+            try store.resetAllSettings()
+            fatalError("reset should still report a failed Keychain deletion")
+        } catch {
+            // Expected: the caller still needs to report that the secure key remains.
+        }
+        assertEqual(store.settings, AISettings(), "ordinary AI settings should still reset when Keychain deletion fails")
+        assertEqual(store.modelListMessage, nil, "reset should clear stale model-list feedback")
+        assertEqual(store.apiKey, "old-key", "a key that could not be deleted should remain visible in memory")
+        assertEqual(keyStorage.value, "old-key", "a failed Keychain deletion should preserve the stored key")
     }
 
     private static func testAIParseResultValidationFallsBackAndTruncates() throws {
@@ -379,6 +554,50 @@ struct Stage2LedgerLogicTests {
         assertEqual(drafts[1].amount, 29.47, "second draft should keep decimal takeaway amount")
     }
 
+    @MainActor
+    private static func testAIEntryViewModelUpdatesOneDraftInPlace() throws {
+        let originalDrafts = [
+            AIParsedLedgerDraft(
+                amount: 28,
+                type: .expense,
+                category: "餐饮",
+                note: "午饭",
+                date: fixedDate(day: 7, hour: 12),
+                dateText: "今天中午",
+                confidence: 0.9,
+                questions: []
+            ),
+            AIParsedLedgerDraft(
+                amount: 42,
+                type: .expense,
+                category: "交通",
+                note: "打车",
+                date: fixedDate(day: 7, hour: 13),
+                dateText: "今天下午",
+                confidence: 0.88,
+                questions: []
+            )
+        ]
+        let updatedDraft = AIParsedLedgerDraft(
+            amount: 30,
+            type: .expense,
+            category: "餐饮",
+            note: "调整后的午饭",
+            date: fixedDate(day: 7, hour: 12),
+            dateText: "今天中午",
+            confidence: 0.9,
+            questions: []
+        )
+        let viewModel = AIEntryViewModel(calendar: calendar)
+        viewModel.parsedDrafts = originalDrafts
+
+        viewModel.updateDraft(updatedDraft, at: 0)
+
+        assertEqual(viewModel.parsedDrafts.count, 2, "editing one AI draft should keep the batch size")
+        assertEqual(viewModel.parsedDrafts[0], updatedDraft, "editing should replace the selected AI draft")
+        assertEqual(viewModel.parsedDrafts[1], originalDrafts[1], "editing should not mutate other AI drafts")
+    }
+
     private static func testNaturalLanguageDateParserHandlesRelativeAndSpecificDates() throws {
         let now = fixedDate(day: 7, hour: 10)
 
@@ -394,6 +613,69 @@ struct Stage2LedgerLogicTests {
         assertEqual(calendar.component(.year, from: specificDate), 2026, "specific date should use current year")
         assertEqual(calendar.component(.month, from: specificDate), 7, "specific date should parse month")
         assertEqual(calendar.component(.day, from: specificDate), 5, "specific date should parse day")
+    }
+
+    private static func testQuickEntryUtilityCategoriesAreValidExpenses() throws {
+        assertEqual(
+            LedgerType.expense.categories.contains("燃气费"),
+            true,
+            "quick-entry gas bills should remain selectable in the shared expense category contract"
+        )
+        assertEqual(
+            LedgerType.expense.categories.contains("电费"),
+            true,
+            "quick-entry electricity bills should remain selectable in the shared expense category contract"
+        )
+    }
+
+    @MainActor
+    private static func testNonFiniteAmountsAreRejected() throws {
+        let invalidAIResult = AIParseResult(
+            amount: .infinity,
+            type: .expense,
+            category: "餐饮",
+            note: "异常金额",
+            dateText: "今天",
+            confidence: 0.8,
+            needsConfirmation: true,
+            questions: []
+        )
+        assertThrowsMessage(
+            try AIParseResultValidator.validatedDraft(from: invalidAIResult, now: fixedDate(day: 7, hour: 10), calendar: calendar),
+            "请补充金额",
+            "AI validation should reject non-finite amounts"
+        )
+
+        let viewModel = LedgerViewModel(
+            store: LedgerStore.inMemory(),
+            budgetStore: BudgetStore.inMemory(),
+            recurringStore: RecurringStore.inMemory(),
+            calendar: calendar
+        )
+        assertThrowsMessage(
+            try viewModel.addRecord(amount: .infinity, type: .expense, category: "餐饮", note: "异常金额", date: fixedDate(day: 7, hour: 10)),
+            "金额要大于 0 哦",
+            "manual record entry should reject non-finite amounts"
+        )
+        assertThrowsMessage(
+            try viewModel.setBudget(category: nil, amountText: "inf"),
+            "金额要大于 0 哦",
+            "budget entry should reject non-finite amounts"
+        )
+        assertThrowsMessage(
+            try viewModel.addRecurringTemplate(
+                title: "异常模板",
+                amountText: "inf",
+                type: .expense,
+                category: "餐饮",
+                note: "",
+                frequency: .monthly,
+                startDate: fixedDate(day: 7, hour: 10),
+                isEnabled: true
+            ),
+            "金额要大于 0 哦",
+            "recurring entry should reject non-finite amounts"
+        )
     }
 
     @MainActor
@@ -528,6 +810,52 @@ struct Stage2LedgerLogicTests {
     }
 
     @MainActor
+    private static func testClearAllDataRollsBackEarlierStoresWhenLaterStoreFails() throws {
+        let ledgerURL = temporaryLedgerURL()
+        let blockedBudgetURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BeanLedgerBlockedBudget-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: blockedBudgetURL, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: ledgerURL)
+            try? FileManager.default.removeItem(at: blockedBudgetURL)
+        }
+
+        let record = LedgerRecord(
+            amount: 88,
+            type: .expense,
+            category: "燃气费",
+            note: "燃气账单",
+            date: fixedDate(day: 7, hour: 10)
+        )
+        let store = LedgerStore(fileURL: ledgerURL)
+        try store.add(record)
+        let budgetStore = BudgetStore(
+            fileURL: blockedBudgetURL,
+            seedBudgets: [Budget(month: "2026-07", category: nil, amount: 1000)]
+        )
+        let viewModel = LedgerViewModel(
+            store: store,
+            budgetStore: budgetStore,
+            recurringStore: RecurringStore.inMemory(),
+            calendar: calendar
+        )
+
+        assertThrowsContaining(
+            try viewModel.clearAllData(),
+            "保存失败",
+            "clear all should surface a later-store persistence failure"
+        )
+
+        assertEqual(viewModel.records.count, 1, "failed clear all should keep the in-memory ledger snapshot")
+        assertEqual(
+            LedgerStore(fileURL: ledgerURL).records.count,
+            1,
+            "failed clear all should restore ledger records already cleared on disk"
+        )
+        assertEqual(viewModel.budgets.count, 1, "failed clear all should keep the budget snapshot")
+    }
+
+    @MainActor
     private static func testRecurringRecordAdvancesOnePeriodAtATime() throws {
         guard let startDate = calendar.date(byAdding: .month, value: -3, to: Date()) else {
             throw TestFailure("expected calendar to create an overdue start date")
@@ -560,6 +888,71 @@ struct Stage2LedgerLogicTests {
         assertEqual(updated.nextDueDate, expectedNextDueDate, "generating one recurring record should advance exactly one period")
         assertEqual(viewModel.records.count, 1, "generating one recurring template should create one ledger record")
         assertEqual(viewModel.dueRecurringTemplates.count, 1, "older missed recurring periods should remain due after one generation")
+    }
+
+    @MainActor
+    private static func testRecurringGenerationRollsBackRecordWhenTemplateAdvanceFails() throws {
+        let blockedRecurringURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BeanLedgerBlockedRecurring-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: blockedRecurringURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: blockedRecurringURL) }
+
+        let template = RecurringRecordTemplate(
+            title: "房租",
+            amount: 2700,
+            type: .expense,
+            category: "房租",
+            note: "月租",
+            frequency: .monthly,
+            startDate: fixedDate(day: 1, hour: 9)
+        )
+        let viewModel = LedgerViewModel(
+            store: LedgerStore.inMemory(),
+            budgetStore: BudgetStore.inMemory(),
+            recurringStore: RecurringStore(fileURL: blockedRecurringURL, seedTemplates: [template]),
+            calendar: calendar
+        )
+
+        assertThrowsContaining(
+            try viewModel.generateRecurringRecord(template),
+            "保存失败",
+            "recurring generation should surface template persistence failure"
+        )
+        assertEqual(
+            viewModel.records.count,
+            0,
+            "failed template advancement should roll back the record that was just generated"
+        )
+        assertEqual(
+            viewModel.dueRecurringTemplates.count,
+            1,
+            "failed template advancement should leave the original template due"
+        )
+    }
+
+    @MainActor
+    private static func testRecurringTemplateCanBeReenabled() throws {
+        let template = RecurringRecordTemplate(
+            title: "房租",
+            amount: 2700,
+            type: .expense,
+            category: "房租",
+            note: "月租",
+            frequency: .monthly,
+            startDate: fixedDate(day: 1, hour: 9),
+            isEnabled: false
+        )
+        let viewModel = LedgerViewModel(
+            store: LedgerStore.inMemory(),
+            budgetStore: BudgetStore.inMemory(),
+            recurringStore: RecurringStore.inMemory(templates: [template]),
+            calendar: calendar
+        )
+
+        try viewModel.setRecurringTemplateEnabled(template, isEnabled: true)
+
+        assertEqual(viewModel.recurringTemplates.first?.isEnabled, true, "disabled recurring templates should be re-enabled")
+        assertEqual(viewModel.dueRecurringTemplates.count, 1, "re-enabled overdue templates should return to the due list")
     }
 
     private static func testClearAllDataConfirmationRequiresExactText() throws {
@@ -632,5 +1025,33 @@ struct TestFailure: Error, CustomStringConvertible {
 
     init(_ description: String) {
         self.description = description
+    }
+}
+
+private final class TestAIAPIKeyStorage: AIAPIKeyStorage {
+    var value: String
+    var shouldFailSave = false
+    var shouldFailDelete = false
+
+    init(value: String) {
+        self.value = value
+    }
+
+    func readAPIKey() throws -> String {
+        value
+    }
+
+    func saveAPIKey(_ apiKey: String) throws {
+        if shouldFailSave {
+            throw TestFailure("simulated Keychain save failure")
+        }
+        value = apiKey
+    }
+
+    func deleteAPIKey() throws {
+        if shouldFailDelete {
+            throw TestFailure("simulated Keychain delete failure")
+        }
+        value = ""
     }
 }

@@ -33,4 +33,16 @@ enum CurrencyFormatter {
         }
         return string(from: 0)
     }
+
+    static func inputString(from amount: Double) -> String {
+        guard amount.isFinite else { return "" }
+        var text = String(format: "%.2f", locale: Locale(identifier: "en_US_POSIX"), amount)
+        while text.last == "0" {
+            text.removeLast()
+        }
+        if text.last == "." {
+            text.removeLast()
+        }
+        return text
+    }
 }
